@@ -1,4 +1,5 @@
 #include "macros.h"
+#include <stdio.h>
 
 #include "lib/src/libultra_internal.h"
 #include "lib/src/osContInternal.h"
@@ -30,7 +31,11 @@ static struct ControllerAPI *controller_implementations[] = {
 };
 
 s32 osContInit(UNUSED OSMesgQueue *mq, u8 *controllerBits, UNUSED OSContStatus *status) {
-    for (size_t i = 0; i < sizeof(controller_implementations) / sizeof(struct ControllerAPI *); i++) {
+    size_t num_controller_impls = sizeof(controller_implementations) / sizeof(struct ControllerAPI *);
+    printf("Initialize controllers\n");
+    printf("num_controller_impls = %d\n", num_controller_impls);
+
+    for (size_t i = 0; i < num_controller_impls; i++) {
         controller_implementations[i]->init();
     }
     *controllerBits = 1;
@@ -47,7 +52,9 @@ void osContGetReadData(OSContPad *pad) {
     pad->stick_y = 0;
     pad->errnum = 0;
 
-    for (size_t i = 0; i < sizeof(controller_implementations) / sizeof(struct ControllerAPI *); i++) {
+    size_t num_controller_impls = sizeof(controller_implementations) / sizeof(struct ControllerAPI *);
+
+    for (size_t i = 0; i < num_controller_impls; i++) {
         controller_implementations[i]->read(pad);
     }
 }

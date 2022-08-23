@@ -25,6 +25,23 @@ static void controller_sdl_init(void) {
     init_ok = true;
 }
 
+static bool needs_controller_input_update = true;
+
+
+OSContPad prev_pad;
+void sdl_controller_printf(OSContPad *pad) {
+    if (prev_pad.button != pad->button ||
+        prev_pad.stick_x != pad->stick_x ||
+        prev_pad.stick_y != pad->stick_y ||
+        prev_pad.errnum != pad->errnum)
+    {
+        // Write controller information to stdout
+        printf("SDL pad: stick_x=%d stick_y=%d button=%d errnum=%d\n",
+                pad->stick_x, pad->stick_y, pad->button, pad->errnum);
+    }
+    prev_pad = *pad;
+}
+
 static void controller_sdl_read(OSContPad *pad) {
     if (!init_ok) {
         return;
@@ -33,19 +50,35 @@ static void controller_sdl_read(OSContPad *pad) {
     SDL_GameControllerUpdate();
 
     if (sdl_cntrl != NULL && !SDL_GameControllerGetAttached(sdl_cntrl)) {
+        printf("Close SDL Game Controller: %p\n", sdl_cntrl);
         SDL_GameControllerClose(sdl_cntrl);
         sdl_cntrl = NULL;
+        needs_controller_input_update = true;
     }
     if (sdl_cntrl == NULL) {
+        int num_joysticks = SDL_NumJoysticks();
+        if (needs_controller_input_update){
+            printf("Open SDL Game Controller\n");
+            printf("num_joysticks = %d\n", num_joysticks);
+        }
         for (int i = 0; i < SDL_NumJoysticks(); i++) {
+            const char* ctrl_name = SDL_GameControllerNameForIndex(i);
+            if (needs_controller_input_update){
+                printf("Checking SDL Game Controller %d: %s\n", i, ctrl_name);
+            }
             if (SDL_IsGameController(i)) {
                 sdl_cntrl = SDL_GameControllerOpen(i);
+                printf("Found SDL Game Controller = %p\n", sdl_cntrl);
                 if (sdl_cntrl != NULL) {
                     break;
                 }
             }
         }
+        needs_controller_input_update = false;
         if (sdl_cntrl == NULL) {
+            if (needs_controller_input_update){
+                printf("No SDL Game Controller detected\n");
+            }
             return;
         }
     }
@@ -93,6 +126,7 @@ static void controller_sdl_read(OSContPad *pad) {
         pad->stick_x = leftx / 409;
         pad->stick_y = -lefty / 409;
     }
+    sdl_controller_printf(pad);
 }
 
 struct ControllerAPI controller_sdl = {
