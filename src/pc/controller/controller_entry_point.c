@@ -47,7 +47,7 @@ s32 osContStartReadData(UNUSED OSMesgQueue *mesg) {
 }
 
 
-#define DEBUG_PAD_INPUTS 0
+#define DEBUG_PAD_INPUTS 1
 #if DEBUG_PAD_INPUTS
 OSContPad prev_pad;
 void print_pad_inputs(OSContPad *pad) {

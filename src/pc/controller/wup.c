@@ -90,7 +90,15 @@ static struct adapter adapters;
 
 static const char *uinput_path;
 
-bool wup_get_controller_input(uint16_t *buttons, uint8_t axis[6]) {
+
+bool wants_saturate = true;  // hack for difference in need for saturation
+
+
+bool wup_get_controller_input(uint16_t *buttons, uint8_t axis[6], bool *do_saturate) {
+
+    // Assuming only 1 controller attached, should be a better way to control this
+    *do_saturate = wants_saturate;
+
     struct adapter *adapter = adapters.next;
     if (adapter != NULL) {
         *buttons = adapter->controllers[0].buttons;
@@ -120,7 +128,7 @@ static void handle_payload(int i, struct ports *port, unsigned char *payload)
    unsigned char status = payload[0];
    unsigned char type = connected_type(status);
 
-   printf("Handle payload\n");
+   wants_saturate = true;
 
    if (type != 0 && !port->connected)
    {
@@ -147,16 +155,16 @@ static void handle_payload(int i, struct ports *port, unsigned char *payload)
 
    uint16_t btns = (uint16_t) payload[1] << 8 | (uint16_t) payload[2];
    port->buttons = btns;
-   // printf("Btns: %04x\n", btns);
+   //printf("Btns: %04x\n", btns);
 
-   // printf("Axis:");
+   //printf("Axis:");
    for (int j = 0; j < 6; j++)
    {
       unsigned char value = payload[j+3];
       port->axis[j] = value;
-      // printf(" %02x", value);
+      //printf(" %02x", value);
    }
-   // puts("");
+   //puts("");
 }
 
 
@@ -266,6 +274,10 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
             payload_axis['STICK_RIGHT'] = (3, 128, 255)
             payload_axis['STICK_UP']    = (4, 127, 0)
             payload_axis['STICK_DOWN']  = (4, 127, 255)
+#payload_axis['STICK_LEFT']  = (3, 128, 2)
+#payload_axis['STICK_RIGHT'] = (3, 128, 254)
+#payload_axis['STICK_UP']    = (4, 127, 2)
+#payload_axis['STICK_DOWN']  = (4, 127, 254)
 
         # Mapping from button names to target bits to their expected bits in port->buttons
         adapter_buttons = {}
@@ -287,10 +299,10 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
         adapter_axis['D_UP']    = NotImplemented
         adapter_axis['D_DOWN']  = NotImplemented
         # Game expects stick coordinates within -80..80, but use 54 to invert saturation, not sure if this should be 80 or 54.
-        adapter_axis['STICK_LEFT']  = (0, 128, 128 - 54)
-        adapter_axis['STICK_RIGHT'] = (0, 128, 128 + 54)
-        adapter_axis['STICK_UP']    = (1, 128, 128 + 54)
-        adapter_axis['STICK_DOWN']  = (1, 128, 128 - 54)
+        adapter_axis['STICK_LEFT']  = (0, 128, 128 - 80)
+        adapter_axis['STICK_RIGHT'] = (0, 128, 128 + 80)
+        adapter_axis['STICK_UP']    = (1, 128, 128 + 80)
+        adapter_axis['STICK_DOWN']  = (1, 128, 128 - 80)
 
         # The following will generate code to builds the port->buttons data from payload.
         import math
@@ -336,7 +348,7 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
                     dir_range = (val_e1 - val_n1)
                     p_unit = (p - val_n1) / dir_range
                     r = val_n2 + (p_unit * (val_e2 - val_n2))
-                    expr = repr(r).replace('VAL', f'((int16_t) payload[{idx1}])')
+                    expr = repr(r).replace('VAL', f'((float) payload[{idx1}])')
                     dz_offset = int(abs(dir_range) * deadzone)
 
                     if key in ['STICK_LEFT', 'STICK_RIGHT']:
@@ -357,6 +369,8 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
                         # print(f'    port->axis[{idx2}] = (uint8_t) {expr};  // Handle {key}')
                         print('}')
     """*/
+
+   wants_saturate = false;
 
    unsigned char type = STATE_NORMAL; // hard coded, unsure if there is a better way to set
 
@@ -397,19 +411,19 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
    bool outside_deadzone = false;
    if (payload[3] < 102) {
        outside_deadzone = true;
-       stick_lr_val = (uint8_t) (27*((int16_t) payload[3])/64 + 74);  // Handle STICK_LEFT
+       stick_lr_val = (uint8_t) (5*((float) payload[3])/8 + 48);  // Handle STICK_LEFT
    }
    if (payload[3] > 153) {
        outside_deadzone = true;
-       stick_lr_val = (uint8_t) (54*((int16_t) payload[3])/127 + 9344/127);  // Handle STICK_RIGHT
+       stick_lr_val = (uint8_t) (80*((float) payload[3])/127 + 6016/127);  // Handle STICK_RIGHT
    }
    if (payload[4] < 102) {
        outside_deadzone = true;
-       stick_ud_val = (uint8_t) (182 - 54*((int16_t) payload[4])/127);  // Handle STICK_UP
+       stick_ud_val = (uint8_t) (208 - 80*((float) payload[4])/127);  // Handle STICK_UP
    }
    if (payload[4] > 153) {
        outside_deadzone = true;
-       stick_ud_val = (uint8_t) (11621/64 - 27*((int16_t) payload[4])/64);  // Handle STICK_DOWN
+       stick_ud_val = (uint8_t) (1659/8 - 5*((float) payload[4])/8);  // Handle STICK_DOWN
    }
 
    if (outside_deadzone) {
@@ -463,8 +477,8 @@ static void *adapter_thread(void *data)
          break;
       }
 
-      // printf("size %d\n", size);
-      // for (int i = 0; i < size; i ++ ){
+      //printf("size %d\n", size);
+      //for (int i = 0; i < size; i ++ ){
       //    printf("pl[%d] = %d, ", i, payload[i]);
       //}
       //printf("\n");
@@ -625,14 +639,20 @@ void *wup_start(UNUSED void *a)
       struct libusb_device_descriptor desc;
 
       libusb_get_device_descriptor(devices[i], &desc);
-      printf("Vendor:Device = %04x:%04x\n", desc.idVendor, desc.idProduct);
-
       if (desc.idVendor == 0x057e && desc.idProduct == 0x0337)
-         add_adapter(devices[i]);
-
+      {
+          printf("Recognized WUP Vendor:Device = %04x:%04x\n", desc.idVendor, desc.idProduct);
+          add_adapter(devices[i]);
+      }
       // BDA N64 Hyperkin Adapter
-      if (desc.idVendor == 0x20d6 && desc.idProduct == 0xa710)
-         add_adapter(devices[i]);
+      else if (desc.idVendor == 0x20d6 && desc.idProduct == 0xa710)
+      {
+          printf("Recognized WUP Vendor:Device = %04x:%04x\n", desc.idVendor, desc.idProduct);
+          add_adapter(devices[i]);
+      }
+      else {
+          // printf("Unrecognized WUP Vendor:Device = %04x:%04x\n", desc.idVendor, desc.idProduct);
+      }
    }
 
    if (count > 0)
@@ -641,7 +661,6 @@ void *wup_start(UNUSED void *a)
    libusb_hotplug_callback_handle callback;
 
    int hotplug_capability = libusb_has_capability(LIBUSB_CAP_HAS_HOTPLUG);
-   printf("hotplug_capability = %d\n", hotplug_capability);
    if (hotplug_capability) {
        int hotplug_ret = libusb_hotplug_register_callback(NULL,
              LIBUSB_HOTPLUG_EVENT_DEVICE_ARRIVED | LIBUSB_HOTPLUG_EVENT_DEVICE_LEFT,
