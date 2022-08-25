@@ -33,7 +33,7 @@ static struct ControllerAPI *controller_implementations[] = {
 s32 osContInit(UNUSED OSMesgQueue *mq, u8 *controllerBits, UNUSED OSContStatus *status) {
     size_t num_controller_impls = sizeof(controller_implementations) / sizeof(struct ControllerAPI *);
     printf("Initialize controllers\n");
-    printf("num_controller_impls = %d\n", num_controller_impls);
+    printf("num_controller_impls = %ld\n", num_controller_impls);
 
     for (size_t i = 0; i < num_controller_impls; i++) {
         controller_implementations[i]->init();
@@ -46,6 +46,28 @@ s32 osContStartReadData(UNUSED OSMesgQueue *mesg) {
     return 0;
 }
 
+
+#define DEBUG_PAD_INPUTS 0
+#if DEBUG_PAD_INPUTS
+OSContPad prev_pad;
+void print_pad_inputs(OSContPad *pad) {
+    // Remember the latest controller pad inputs and print new inputs
+    // whenever there is a change.
+    if (prev_pad.button != pad->button ||
+        prev_pad.stick_x != pad->stick_x ||
+        prev_pad.stick_y != pad->stick_y ||
+        prev_pad.errnum != pad->errnum)
+    {
+        // Write controller information to stdout
+        printf("Pad: stick_x=%d stick_y=%d button=%d errnum=%d\n",
+                pad->stick_x, pad->stick_y, pad->button, pad->errnum);
+        prev_pad = *pad;
+    }
+}
+#endif
+
+
+
 void osContGetReadData(OSContPad *pad) {
     pad->button = 0;
     pad->stick_x = 0;
@@ -57,4 +79,7 @@ void osContGetReadData(OSContPad *pad) {
     for (size_t i = 0; i < num_controller_impls; i++) {
         controller_implementations[i]->read(pad);
     }
+#if DEBUG_PAD_INPUTS
+        print_pad_inputs(pad);
+#endif
 }

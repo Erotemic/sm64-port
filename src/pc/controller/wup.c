@@ -163,32 +163,217 @@ static void handle_payload(int i, struct ports *port, unsigned char *payload)
 
 static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *payload)
 {
-    /*
-     * This function is written to support the original N64 controller
-     * plugged in using a hyperkin adapter. We do this by simply coercing
-     * the payload into an adapter buttons and axis that controller_wup.c will expect
-     */
+  /*"""
 
-   unsigned char type = STATE_NORMAL; // hacked
+    This function is written to support the original N64 controller plugged
+    in using a hyperkin adapter. We do this by simply coercing the payload
+    into an adapter buttons and axis that controller_wup.c will expect.
 
-   /*printf("Handle hyperkin payload\n");*/
+    https://www.hyperkin.com/controller-adapter-for-n64r-controller-compatible-with-nintendo-switchr-pc-hyperkin.html
+
+    Reminder, you will need custom udev rules to make this work:
+    in /etc/udev/rules.d/80-wup028.rules
+
+        SUBSYSTEM=="usb", ATTRS{idVendor}=="20d6", ATTRS{idProduct}=="a710", MODE="0666"
+        SUBSYSTEM=="usb_device", ATTRS{idVendor}=="20d6", ATTRS{idProduct}=="a710", MODE="0666"
+
+    Dont forget to `sudo udevadm control --reload-rules` and unplug/replug the
+    controller in after!
+
+    Technical Details:
+        An example payload from libusb with no (i.e. neutral) inputs is as follows:
+
+        payload[0] = 0,  # main buttons
+        payload[1] = 0,  # start button
+        payload[2] = 8,  # d-pad
+        payload[3] = 128,  # stick-lr
+        payload[4] = 127,  # stick-ud
+        payload[5] = 128,  # c-buttons
+        payload[6] = 127,  # c-buttons
+        payload[7] = 0,    # unused
+
+        When a button on the N64 controller is pressed the following changes occur:
+
+        Button  =    data    ==  neutral -> pressed
+        Z       = payload[0] ==   0  ->  64
+        R       = payload[0] ==   0  ->  32
+        L       = payload[0] ==   0  ->  16
+        A       = payload[0] ==   0  ->   4
+        B       = payload[0] ==   0  ->   2
+        start   = payload[1] ==   0  ->   2
+        c-right = payload[5] == 128  -> 255
+        c-left  = payload[5] == 128  ->   0
+        c-up    = payload[6] == 127  ->   0
+        c-down  = payload[6] == 127  -> 255
+        d-up    = payload[2] ==   8  ->   0
+        d-down  = payload[2] ==   8  ->   4
+        d-left  = payload[2] ==   8  ->   6
+        d-right = payload[2] ==   8  ->   2
+
+        When the stick on the N64 controller is tilted the following changes occur
+
+        Stick Tilt Left  = payload[3] = ~128 -> ~0
+        Stick Tilt Right = payload[3] = ~128 -> ~255
+        Stick Tilt Up    = payload[4] = ~127 -> ~0
+        Stick Tilt Down  = payload[4] = ~127 -> ~255
+
+        The neutral position and ranges of the stick seems to depend on the controller itself.
+
+        On an OEM N64 controller, the following ranges were measured:
+            left, neutral, right = 13, 128, 243
+            top, neutral, bottom = 12, 127, 254
+
+        On an Hori MiniPad, the following ranges were measured:
+            left, neutral, right =  2, 102, 245
+            top, neutral, bottom =  2, 127, 254
+
+        To integrate this logic, we seek to make the output of this function behave
+        as expected by the controller_wup.c file.  This requires us to map the
+        buttons and axis into port->buttons and port->axis in a way that upstream
+        logic expects. The following Python program captures the expected bits
+        associated with each button in the desired adapter output, and what is
+        given to us in our payload. This Python logic is used to generate the C
+        code that ultimately performs this task.
+
+        # Mapping from button names to the payload index and associated bit value.
+        payload_buttons = {}
+        payload_buttons['Z'] = (0, 64)
+        payload_buttons['R'] = (0, 32)
+        payload_buttons['L'] = (0, 16)
+        payload_buttons['A'] = (0, 4)
+        payload_buttons['B'] = (0, 2)
+        payload_buttons['START'] = (1, 2)
+
+        # Mapping from axis directions to the payload index, neutral, and extreme value.
+        payload_axis = {}
+        payload_axis['C_LEFT']  = (5, 128, 0)
+        payload_axis['C_RIGHT'] = (5, 128, 255)
+        payload_axis['C_UP']    = (6, 127, 0)
+        payload_axis['C_DOWN']  = (6, 127, 255)
+        payload_axis['D_LEFT']  = (2, 8, 0)
+        payload_axis['D_RIGHT'] = (2, 8, 4)
+        payload_axis['D_UP']    = (2, 8, 6)
+        payload_axis['D_DOWN']  = (2, 8, 2)
+        if 0:
+            #-- Do the stick values depend on calibration?
+            payload_axis['STICK_LEFT']  = (3, 102, 2)
+            payload_axis['STICK_RIGHT'] = (3, 102, 245)
+            payload_axis['STICK_UP']    = (4, 127, 2)
+            payload_axis['STICK_DOWN']  = (4, 127, 254)
+        else:
+            # Idealized
+            payload_axis['STICK_LEFT']  = (3, 128, 0)
+            payload_axis['STICK_RIGHT'] = (3, 128, 255)
+            payload_axis['STICK_UP']    = (4, 127, 0)
+            payload_axis['STICK_DOWN']  = (4, 127, 255)
+
+        # Mapping from button names to target bits to their expected bits in port->buttons
+        adapter_buttons = {}
+        adapter_buttons['START'] = 0x0001
+        adapter_buttons['Z'] = 0x0008;
+        adapter_buttons['R'] = 0x0004;
+        adapter_buttons['A'] = 0x0100;
+        adapter_buttons['B'] = 0x0200;
+        adapter_buttons['L'] = 0x1000;
+
+        # Mapping from the button direction to its associated index in port->axis, neutral value, and extreme value.
+        adapter_axis = {}
+        adapter_axis['C_LEFT']  = (2, 0X80, 0x40)
+        adapter_axis['C_RIGHT'] = (2, 0X80, 0xC0)
+        adapter_axis['C_UP']    = (3, 0X80, 0x40)
+        adapter_axis['C_DOWN']  = (3, 0X80, 0xC0)
+        adapter_axis['D_LEFT']  = NotImplemented
+        adapter_axis['D_RIGHT'] = NotImplemented
+        adapter_axis['D_UP']    = NotImplemented
+        adapter_axis['D_DOWN']  = NotImplemented
+        # Game expects stick coordinates within -80..80, but use 54 to invert saturation, not sure if this should be 80 or 54.
+        adapter_axis['STICK_LEFT']  = (0, 128, 128 - 54)
+        adapter_axis['STICK_RIGHT'] = (0, 128, 128 + 54)
+        adapter_axis['STICK_UP']    = (1, 128, 128 + 54)
+        adapter_axis['STICK_DOWN']  = (1, 128, 128 - 54)
+
+        # The following will generate code to builds the port->buttons data from payload.
+        import math
+        button_parts = []
+        for k, (idx, val) in payload_buttons.items():
+            adapt_val = adapter_buttons[k]
+            if val > adapt_val:
+                shift = int(math.log2(val / adapt_val))
+                button_parts.append(f' (uint16_t) (payload[{idx}] & {val:#04x}) >> {shift} |  // map {k} to {adapt_val:#04x} ')
+            else:
+                shift = int(math.log2(adapt_val / val))
+                button_parts.append(f' (uint16_t) (payload[{idx}] & {val:#04x}) << {shift} |  // map {k} to {adapt_val:#04x}')
+        print('uint16_t btns = (')
+        print('\n'.join(button_parts))
+        print(');')
+
+        ### In progress writing better logic
+        ### This logic gets us most of the way there, but we do a bit more manual munging after
+
+        deadzone = 0.204
+        print(f'uint8_t stick_lr_val = {adapter_axis["STICK_LEFT"][1]};')
+        print(f'uint8_t stick_ud_val = {adapter_axis["STICK_UP"][1]};')
+        print('bool outside_deadzone = false;')
+        for key, payload_tup in payload_axis.items():
+            adapt_tup = adapter_axis[key]
+            if adapt_tup is not NotImplemented:
+                idx1, val_n1, val_e1 = payload_tup
+                idx2, val_n2, val_e2 = adapt_tup
+                if key.startswith('C'):
+                    continue
+                    if val_e1 > val_n1:
+                        print(f'if (payload[{idx1}] > {val_n1}) {{')
+                        print(f'    port->axis[{idx2}] = payload[{idx1}]  // Handle {key}')
+                        print('}')
+                    if val_e1 < val_n1:
+                        print(f'if (payload[{idx1}] < {val_n1}) {{')
+                        print(f'    port->axis[{idx2}] = payload[{idx1}]  // Handle {key}')
+                        print('}')
+                else:
+                    import sympy as sym
+                    p = sym.symbols(f'VAL')
+
+                    dir_range = (val_e1 - val_n1)
+                    p_unit = (p - val_n1) / dir_range
+                    r = val_n2 + (p_unit * (val_e2 - val_n2))
+                    expr = repr(r).replace('VAL', f'((int16_t) payload[{idx1}])')
+                    dz_offset = int(abs(dir_range) * deadzone)
+
+                    if key in ['STICK_LEFT', 'STICK_RIGHT']:
+                        var = 'stick_lr_val'
+                    else:
+                        var = 'stick_ud_val'
+
+                    if val_e1 > val_n1:
+                        print(f'if (payload[{idx1}] > {val_n1 + dz_offset}) {{')
+                        # print(f'    port->axis[{idx2}] = (uint8_t) {expr};  // Handle {key}')
+                        print(f'    outside_deadzone = true;')
+                        print(f'    {var} = (uint8_t) ({expr});  // Handle {key}')
+                        print('}')
+                    if val_e1 < val_n1:
+                        print(f'if (payload[{idx1}] < {val_n1 - dz_offset}) {{')
+                        print(f'    outside_deadzone = true;')
+                        print(f'    {var} = (uint8_t) ({expr});  // Handle {key}')
+                        # print(f'    port->axis[{idx2}] = (uint8_t) {expr};  // Handle {key}')
+                        print('}')
+    """*/
+
+   unsigned char type = STATE_NORMAL; // hard coded, unsure if there is a better way to set
 
    if (type != 0 && !port->connected)
    {
-      //uinput_create(i, port, type);
        port->type = type;
        port->connected = true;
    }
    else if (type == 0 && port->connected)
    {
-      //uinput_destroy(i, port);
        port->connected = false;
    }
 
    if (!port->connected)
       return;
 
-   port->extra_power = 0; // hacked
+   port->extra_power = 0;  // hard coded, unsure if there is a better way to set
 
    if (type != port->type)
    {
@@ -196,156 +381,48 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
       port->type = type;
    }
 
-
-   /*
-   * Hyperkin64 Adapter Notes
-   * NEUTRAL PAYLOAD:
-   pl[0] = 0,  # main buttons
-   pl[1] = 0,  # start button
-   pl[2] = 8,  # d-pad
-   pl[3] = 128,  # stick-lr
-   pl[4] = 127,  # stick-ud
-   pl[5] = 128,  # c-buttons
-   pl[6] = 127,  # c-buttons
-   pl[7] = 0,    # unused
-
-   * Z = payload[0] == 0 -> 64 - 0x40
-   * R = payload[0] == 0 -> 32
-   * L = payload[0] == 0 -> 16
-   * A = payload[0] == 0 -> 4
-   * B = payload[0] == 0 -> 2
-   * start = payload[1] == 0 -> 2
-   * c-right = payload[5] == 128 -> 255
-   * c-left = payload[5] == 128 -> 0
-   * c-up = payload[6] == 127 -> 0
-   * c-down = payload[6] == 255 -> 0
-   * d-up = payload[2] == 8 -> 0
-   * d-down = payload[2] == 8 -> 4
-   * d-left = payload[2] == 8 -> 6
-   * d-right = payload[2] == 8 -> 2
-   * stick = payload[3], payload[4] == neutral: 128, 127
-   * stick-LR-axis = payload[3] == nuetral: 128, left=13, right=243, can go up to 2/245 on hori-minipad, nutral on hori seems to be 102
-   * stick-UD-axis = payload[4] == nuetral: 127, top=12, bot=254, can go from 2 to 254 on hori minipad. Nuetroal on hori is still 127
-
-   # Mapping from button name to payload index and bit value
-   adapter_buttons = {}
-   adapter_axis = {}
-   adapter_buttons['START'] = 0x0001
-   adapter_buttons['Z'] = 0x0008;
-   adapter_buttons['R'] = 0x0004;
-   adapter_buttons['A'] = 0x0100;
-   adapter_buttons['B'] = 0x0200;
-   adapter_buttons['L'] = 0x1000;
-
-   payload_buttons = {}
-   payload_axis = {}
-   payload_buttons['Z'] = (0, 64)
-   payload_buttons['R'] = (0, 32)
-   payload_buttons['L'] = (0, 16)
-   payload_buttons['A'] = (0, 4)
-   payload_buttons['B'] = (0, 2)
-   payload_buttons['START'] = (1, 2)
-
-   payload_axis['C_LEFT'] = (5, 255)
-   payload_axis['C_RIGHT'] = (5, 0)
-   payload_axis['C_UP'] = (6, 0)
-   payload_axis['C_DOWN'] = (6, 255)
-   import math
-   button_parts = []
-   for k, (idx, val) in payload_buttons.items():
-       adapt_val = adapter_buttons[k]
-       if val > adapt_val:
-           shift = int(math.log2(val / adapt_val))
-           button_parts.append(f' (uint16_t) (payload[{idx}] & {val:#04x}) >> {shift} |  // map {k} to {adapt_val:#04x} ')
-       else:
-           shift = int(math.log2(adapt_val / val))
-           button_parts.append(f' (uint16_t) (payload[{idx}] & {val:#04x}) << {shift} |  // map {k} to {adapt_val:#04x}')
-       print(f'payload[{idx}] & {val:016b} -> {adapt_val:016b} - {k}')
-
-
-   # axis index, and value
-   adapter_axis['C_LEFT'] = (2, 0x40);
-   adapter_axis['C_RIGHT'] = (2, 0xC0);
-   adapter_axis['C_DOWN'] = (3, 0x40);
-   adapter_axis['C_UP'] = ??
-   adapter_axis['D_UP'] = ??
-   adapter_axis['STICK_LEFT'] = (0, None);
-   adapter_axis['STICK_UP'] = (1, None):
-   for k (idx, val) in payload_axis.items():
-       pass
-
-   print('uint16_t btns = (')
-   print('\n'.join(button_parts))
-   print(');')
-   */
-
+   // Generated code to map the payload to port->buttons
    uint16_t btns = (
-     (uint16_t) (payload[0] & 0x40) >> 3 |  // map Z to 0x08
-     (uint16_t) (payload[0] & 0x20) >> 3 |  // map R to 0x04
-     (uint16_t) (payload[0] & 0x10) << 8 |  // map L to 0x1000
-     (uint16_t) (payload[0] & 0x04) << 6 |  // map A to 0x100
-     (uint16_t) (payload[0] & 0x02) << 8 |  // map B to 0x200
-     (uint16_t) (payload[1] & 0x02) >> 1    // map START to 0x01
-   );
-
+   (uint16_t) (payload[0] & 0x40) >> 3 |  // map Z to 0x08
+       (uint16_t) (payload[0] & 0x20) >> 3 |  // map R to 0x04
+       (uint16_t) (payload[0] & 0x10) << 8 |  // map L to 0x1000
+       (uint16_t) (payload[0] & 0x04) << 6 |  // map A to 0x100
+       (uint16_t) (payload[0] & 0x02) << 8 |  // map B to 0x200
+       (uint16_t) (payload[1] & 0x02) >> 1    // map START to 0x01
+       );
    port->buttons = btns;
 
-   // The values need to be nudged slightly
-   // Game expects stick coordinates within -80..80
-   // 32768 / 409 = ~80
-   port->axis[2] = payload[5];  // map C-lr to axis 2
+   uint8_t stick_lr_val = 128;
+   uint8_t stick_ud_val = 128;
+   bool outside_deadzone = false;
+   if (payload[3] < 102) {
+       outside_deadzone = true;
+       stick_lr_val = (uint8_t) (27*((int16_t) payload[3])/64 + 74);  // Handle STICK_LEFT
+   }
+   if (payload[3] > 153) {
+       outside_deadzone = true;
+       stick_lr_val = (uint8_t) (54*((int16_t) payload[3])/127 + 9344/127);  // Handle STICK_RIGHT
+   }
+   if (payload[4] < 102) {
+       outside_deadzone = true;
+       stick_ud_val = (uint8_t) (182 - 54*((int16_t) payload[4])/127);  // Handle STICK_UP
+   }
+   if (payload[4] > 153) {
+       outside_deadzone = true;
+       stick_ud_val = (uint8_t) (11621/64 - 27*((int16_t) payload[4])/64);  // Handle STICK_DOWN
+   }
+
+   if (outside_deadzone) {
+       port->axis[0] = stick_lr_val;
+       port->axis[1] = stick_ud_val;
+   }
+   else{
+       port->axis[0] = 128;
+       port->axis[1] = 128;
+   }
+
+   port->axis[2] = payload[5];        // map C-lr to axis 2
    port->axis[3] = 255 - payload[6];  // map C-ud to axis 3
-
-   // Hack because I'm bad at c-math apparently
-   // We really don't need floats for this, but I just wanna play a run.
-   /*float left = 13;*/
-   /*float right = 243;*/
-   /*float top = 12;*/
-   /*float bot = 254;*/
-   float xcenter = 102;
-   float ycenter = 127;
-   float raw_x = (float) payload[3];
-   float raw_y = (float) payload[4];
-
-   float unit_x = (raw_x - xcenter) / 128; // -1 to 1
-   float unit_y = -(raw_y - ycenter) / 128; // -1 to 1
-   if (unit_x < 0){
-       unit_x /= (xcenter / 128.);
-   }
-   else {
-       unit_x /= (255 - xcenter) / 128.;
-   }
-   if (unit_y < 0){
-       unit_y /= (ycenter / 128.);
-   }
-   else {
-       unit_y /= (255 - ycenter) / 128.;
-   }
-   if (unit_y < 0.2 && unit_y > -0.2){
-       unit_y = 0;
-   }
-   if (unit_x < 0.2 && unit_x > -0.2){
-       unit_x = 0;
-   }
-   uint8_t byte_x = (uint8_t) (unit_x * 80 + 128);
-   uint8_t byte_y = (uint8_t) (unit_y * 80 + 128);
-   printf("Raw_XY %f %f\n", raw_x, raw_y);
-   printf("Unit_XY %f %f\n", unit_x, unit_y);
-   printf("Fudged_XY %d %d\n", byte_x, byte_y);
-   port->axis[0] = byte_x;
-   port->axis[1] = byte_y;
-
-   /*port->axis[0] = (uint8_t) (((int) payload[3]) * 5 / 8);  // map stick-lr to axis - 0        */
-   /*port->axis[1] = (uint8_t) (((int) (255 - payload[4])) * 5 / 8);  // map stick-lr to axis - 1*/
-   // D pad seems unhandled.
-
-   /*for (int j = 0; j < 6; j++)           */
-   /*{                                     */
-   /*   unsigned char value = payload[j+3];*/
-   /*   port->axis[j] = value;             */
-   /*   [>printf(" %02x", value);<]        */
-   /*}                                     */
-   /*puts("");*/
 }
 
 
@@ -385,11 +462,12 @@ static void *adapter_thread(void *data)
          a->quitting = true;
          break;
       }
-      printf("size %d\n", size);
-      for (int i = 0; i < size; i ++ ){
-          printf("pl[%d] = %d, ", i, payload[i]);
-      }
-      printf("\n");
+
+      // printf("size %d\n", size);
+      // for (int i = 0; i < size; i ++ ){
+      //    printf("pl[%d] = %d, ", i, payload[i]);
+      //}
+      //printf("\n");
 
       if (size == 8)
       {
