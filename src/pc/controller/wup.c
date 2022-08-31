@@ -426,7 +426,7 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
                     range1 = v12 - v11
                     range2 = v22 - v21
                     el = '' if i == 0 else 'else '
-                    r = ((p - v11) / range1) * range2 + v21
+                    r = (((p - v11) / range1) * range2 + v21).evalf()
                     expr = repr(r).replace('VAL', f'((float) payload[{idx1}])')
                     print(f'else if ( {raw} < {v12} )')
                     print('{')
@@ -486,23 +486,23 @@ if ( payload[3] < 45 )
 }
 else if ( payload[3] < 81 )
 {
-    stick_lr_val = (uint8_t) (10*((float) payload[3])/9 - 2);  // Handle STICK_LEFT_RIGHT ramp
+    stick_lr_val = (uint8_t) (1.11111111111111*((float) payload[3]) - 2.0);  // Handle STICK_LEFT_RIGHT ramp
 }
 else if ( payload[3] < 97 )
 {
-    stick_lr_val = (uint8_t) (5*((float) payload[3])/2 - 229/2);  // Handle STICK_LEFT_RIGHT ramp
+    stick_lr_val = (uint8_t) (2.5*((float) payload[3]) - 114.5);  // Handle STICK_LEFT_RIGHT ramp
 }
 else if ( payload[3] < 159 )
 {
-    stick_lr_val = (uint8_t) (128);  // Handle STICK_LEFT_RIGHT ramp
+    stick_lr_val = (uint8_t) (128.000000000000);  // Handle STICK_LEFT_RIGHT ramp
 }
 else if ( payload[3] < 175 )
 {
-    stick_lr_val = (uint8_t) (5*((float) payload[3])/2 - 539/2);  // Handle STICK_LEFT_RIGHT ramp
+    stick_lr_val = (uint8_t) (2.5*((float) payload[3]) - 269.5);  // Handle STICK_LEFT_RIGHT ramp
 }
 else if ( payload[3] < 211 )
 {
-    stick_lr_val = (uint8_t) (10*((float) payload[3])/9 - 238/9);  // Handle STICK_LEFT_RIGHT ramp
+    stick_lr_val = (uint8_t) (1.11111111111111*((float) payload[3]) - 26.4444444444444);  // Handle STICK_LEFT_RIGHT ramp
 }
 else
 {
@@ -516,28 +516,29 @@ if ( payload[4] < 47 )
 }
 else if ( payload[4] < 81 )
 {
-    stick_ud_val = (uint8_t) (4476/17 - 20*((float) payload[4])/17);  // Handle STICK_UP_DOWN ramp
+    stick_ud_val = (uint8_t) (263.294117647059 - 1.17647058823529*((float) payload[4]));  // Handle STICK_UP_DOWN ramp
 }
 else if ( payload[4] < 97 )
 {
-    stick_ud_val = (uint8_t) (741/2 - 5*((float) payload[4])/2);  // Handle STICK_UP_DOWN ramp
+    stick_ud_val = (uint8_t) (370.5 - 2.5*((float) payload[4]));  // Handle STICK_UP_DOWN ramp
 }
 else if ( payload[4] < 159 )
 {
-    stick_ud_val = (uint8_t) (128);  // Handle STICK_UP_DOWN ramp
+    stick_ud_val = (uint8_t) (128.000000000000);  // Handle STICK_UP_DOWN ramp
 }
 else if ( payload[4] < 175 )
 {
-    stick_ud_val = (uint8_t) (1051/2 - 5*((float) payload[4])/2);  // Handle STICK_UP_DOWN ramp
+    stick_ud_val = (uint8_t) (525.5 - 2.5*((float) payload[4]));  // Handle STICK_UP_DOWN ramp
 }
 else if ( payload[4] < 209 )
 {
-    stick_ud_val = (uint8_t) (4996/17 - 20*((float) payload[4])/17);  // Handle STICK_UP_DOWN ramp
+    stick_ud_val = (uint8_t) (293.882352941176 - 1.17647058823529*((float) payload[4]));  // Handle STICK_UP_DOWN ramp
 }
 else
 {
     stick_ud_val = 48;  // Handle STICK_UP_DOWN extreme high
 }
+
 
 
    port->axis[0] = stick_lr_val;
