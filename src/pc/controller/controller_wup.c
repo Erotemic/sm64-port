@@ -17,12 +17,6 @@ static int8_t saturate(int v) {
     return v < -128 ? -128 : v > 127 ? 127 : v;
 }
 
-static int8_t saturate2(int v) {
-    // Is this supposed to map between -80 and 80?
-    //v = v * 11 / 10;
-    return v < -80 ? -80 : v > 80 ? 80 : v;
-}
-
 static void controller_wup_init(void) {
     printf("Initializing WUP Controller\n");
     pthread_t pid;
@@ -34,9 +28,9 @@ static void controller_wup_read(OSContPad *pad) {
     uint16_t buttons;
     uint8_t axis[6];
     bool do_saturate;
-    int8_t stick_x;
-    int8_t stick_y;
     if (wup_get_controller_input(&buttons, axis, &do_saturate)) {
+        int8_t stick_x;
+        int8_t stick_y;
         if (buttons & 0x0001) pad->button |= START_BUTTON;
         if (buttons & 0x0008) pad->button |= Z_TRIG;
         if (buttons & 0x0004) pad->button |= R_TRIG;
@@ -52,10 +46,9 @@ static void controller_wup_read(OSContPad *pad) {
             stick_y = saturate(axis[1] - 128 - 0);
         }
         else {
-            stick_x = saturate2(axis[0] - 128 - 0);
-            stick_y = saturate2(axis[1] - 128 - 0);
-            /*stick_x = axis[0] - 128;*/
-            /*stick_y = axis[1] - 128;*/
+            // Already in the right range (128-80, 128+80) in this case.
+            stick_x = axis[0] - 128;
+            stick_y = axis[1] - 128;
         }
         if (stick_x != 0 || stick_y != 0) {
             pad->stick_x = stick_x;

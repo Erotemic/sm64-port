@@ -172,6 +172,71 @@ static void handle_payload(int i, struct ports *port, unsigned char *payload)
 static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *payload)
 {
   /*"""
+   *
+   *
+    References:
+    https://digitalcommons.calpoly.edu/cgi/viewcontent.cgi?article=1185&context=eesp
+    ipfs.io/ipfs/bafybeighb4imouukdmn4w77i5j72oovprbvkgstujlerlxiryf44zb3iny
+
+    http://ultra64.ca/files/documentation/online-manuals/man/pro-man/pro26/26-02.html#04.1
+         //
+         //http://n64devkit.square7.ch/pro-man/pro26/26-02.htm
+
+    The Control Stick's coordinate positions stick_x and stick_y are signed
+    characters with the range of -128 ~ 127. However, for the actual program we
+    recommend using values within the ranges shown below:
+
+    Left/right X axis   +/- 61
+    Up/down Y axis      +/- 63
+    X axis incline      +/- 45
+    Y axis incline      +/- 47
+
+    +--------------------+-------------------+-------------+------------+
+    | Payload (unsigned) |  Payload (signed) | OSContValue |  Note      |
+    +--------------------+-------------------+-------------+------------+
+    |           127      |             0     |      0      |  Deadzone  |
+    +--------------------+-------------------+-------------+------------+
+    |           100      |           -27     |      0      |  Deadzone  |
+    +--------------------+-------------------+-------------+------------+
+    |            99      |           -28     |      1      |  Minimum   |
+    +--------------------+-------------------+-------------+------------+
+    |            80      |           -47     |     40      |  Incline   |
+    +--------------------+-------------------+-------------+------------+
+    |            64      |           -63     |     80      |  Maximum   |
+    +--------------------+-------------------+-------------+------------+
+    |             0      |          -127     |     80      |  Saturated |
+    +--------------------+-------------------+-------------+------------+
+
+
+    Stick Value Ranges for Differenct Contrllers
+
+        On an OEM N64 controller, the following ranges were measured:
+            left, neutral, right = 13, 128, 243
+            top, neutral, bottom = 12, 127, 254
+
+        On an Hori MiniPad, the following ranges were measured:
+            left, neutral, right =  2, 102, 245
+            top, neutral, bottom =  2, 127, 254
+
+
+    +-------------------+----------------+----------------+----------------+
+    |     Direction     | Payload (Gray) | Payload (Blue) | Payload (Pink) |
+    +-------------------+----------------+----------------+----------------+
+    |       Y-Up-Max    |            24  |            12  |              0 |
+    +-------------------+----------------+----------------+----------------+
+    |       Y-Down-Max  |            240 |            252 |            250 |
+    +-------------------+----------------+----------------+----------------+
+    |       X-Left-Max  |             18 |             11 |              0 |
+    +-------------------+----------------+----------------+----------------+
+    |       X-Right-Max |            234 |            246 |            255 |
+    +-------------------+----------------+----------------+----------------+
+    |       X-Neutral   |       ~102-128 |       ~102-154 |       ~102-128 |
+    +-------------------+----------------+----------------+----------------+
+    |       y-Neutral   |       ~102-153 |       ~102-153 |       ~102-127 |
+    +-------------------+----------------+----------------+----------------+
+
+    Gray and Blue are OEM controllers.  Pink is the HoriMiniPad.
+
 
     This function is written to support the original N64 controller plugged
     in using a hyperkin adapter. We do this by simply coercing the payload
@@ -254,30 +319,35 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
 
         # Mapping from axis directions to the payload index, neutral, and extreme value.
         payload_axis = {}
-        payload_axis['C_LEFT']  = (5, 128, 0)
-        payload_axis['C_RIGHT'] = (5, 128, 255)
-        payload_axis['C_UP']    = (6, 127, 0)
-        payload_axis['C_DOWN']  = (6, 127, 255)
-        payload_axis['D_LEFT']  = (2, 8, 0)
-        payload_axis['D_RIGHT'] = (2, 8, 4)
-        payload_axis['D_UP']    = (2, 8, 6)
-        payload_axis['D_DOWN']  = (2, 8, 2)
-        if 0:
-            #-- Do the stick values depend on calibration?
-            payload_axis['STICK_LEFT']  = (3, 102, 2)
-            payload_axis['STICK_RIGHT'] = (3, 102, 245)
-            payload_axis['STICK_UP']    = (4, 127, 2)
-            payload_axis['STICK_DOWN']  = (4, 127, 254)
-        else:
-            # Idealized
-            payload_axis['STICK_LEFT']  = (3, 128, 0)
-            payload_axis['STICK_RIGHT'] = (3, 128, 255)
-            payload_axis['STICK_UP']    = (4, 127, 0)
-            payload_axis['STICK_DOWN']  = (4, 127, 255)
-#payload_axis['STICK_LEFT']  = (3, 128, 2)
-#payload_axis['STICK_RIGHT'] = (3, 128, 254)
-#payload_axis['STICK_UP']    = (4, 127, 2)
-#payload_axis['STICK_DOWN']  = (4, 127, 254)
+        #payload_axis['C_LEFT']  = (5, 128, 0)
+        #payload_axis['C_RIGHT'] = (5, 128, 255)
+        #payload_axis['C_UP']    = (6, 127, 0)
+        #payload_axis['C_DOWN']  = (6, 127, 255)
+        #payload_axis['D_LEFT']  = (2, 8, 0)
+        #payload_axis['D_RIGHT'] = (2, 8, 4)
+        #payload_axis['D_UP']    = (2, 8, 6)
+        #payload_axis['D_DOWN']  = (2, 8, 2)
+
+        """
+        From the manual
+        The Control Stick's coordinate positions stick_x and stick_y
+        are signed characters with the range of -128 ~ 127.
+        However, for the actual program we recommend using values
+        within the ranges shown below:
+
+        Left/right X axis   +/- 61
+        Up/down Y axis      +/- 63
+        X axis incline      +/- 45
+        Y axis incline      +/- 47
+        """
+
+        # Stike, the tuple will mean: payload_idx, left extreme, left mid, left zero, right zero, right mid, right extreme.
+        # Idealized
+        #payload_axis['STICK_LEFT_RIGHT']  = (3, 128 - 63, 128 - 47, 128 - 31, 128 + 31, 128 + 47, 128 + 63)
+        #payload_axis['STICK_UP_DOWN']     = (4, 128 - 61, 128 - 45, 128 - 31, 128 + 31, 128 + 45, 128 + 61)
+        # Bumping these values to try and make things "feel right"
+        payload_axis['STICK_LEFT_RIGHT']  = (3, 128 - 83, 128 - 47, 128 - 31, 128 + 31, 128 + 47, 128 + 83)
+        payload_axis['STICK_UP_DOWN']     = (4, 128 - 81, 128 - 47, 128 - 31, 128 + 31, 128 + 47, 128 + 81)
 
         # Mapping from button names to target bits to their expected bits in port->buttons
         adapter_buttons = {}
@@ -290,19 +360,20 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
 
         # Mapping from the button direction to its associated index in port->axis, neutral value, and extreme value.
         adapter_axis = {}
-        adapter_axis['C_LEFT']  = (2, 0X80, 0x40)
-        adapter_axis['C_RIGHT'] = (2, 0X80, 0xC0)
-        adapter_axis['C_UP']    = (3, 0X80, 0x40)
-        adapter_axis['C_DOWN']  = (3, 0X80, 0xC0)
-        adapter_axis['D_LEFT']  = NotImplemented
-        adapter_axis['D_RIGHT'] = NotImplemented
-        adapter_axis['D_UP']    = NotImplemented
-        adapter_axis['D_DOWN']  = NotImplemented
-        # Game expects stick coordinates within -80..80, but use 54 to invert saturation, not sure if this should be 80 or 54.
-        adapter_axis['STICK_LEFT']  = (0, 128, 128 - 80)
-        adapter_axis['STICK_RIGHT'] = (0, 128, 128 + 80)
-        adapter_axis['STICK_UP']    = (1, 128, 128 + 80)
-        adapter_axis['STICK_DOWN']  = (1, 128, 128 - 80)
+        #adapter_axis['C_LEFT']  = (2, 0X80, 0x40)
+        #adapter_axis['C_RIGHT'] = (2, 0X80, 0xC0)
+        #adapter_axis['C_UP']    = (3, 0X80, 0x40)
+        #adapter_axis['C_DOWN']  = (3, 0X80, 0xC0)
+        #adapter_axis['D_LEFT']  = NotImplemented
+        #adapter_axis['D_RIGHT'] = NotImplemented
+        #adapter_axis['D_UP']    = NotImplemented
+        #adapter_axis['D_DOWN']  = NotImplemented
+
+        # Mapping from the button direction to its associated index in port->axis, left-extreme, left-ramp, left-min, right-min, right-ramp, right-extreme
+        # Mapping from the button direction to its associated index in port->axis, up-extreme, up-ramp, up-min, down-min, down-ramp, down-extreme
+        # Saturation values should be -80 to 80
+        adapter_axis['STICK_LEFT_RIGHT']  = (0, 128 - 80, 128 - 40, 128 + 0, 128 + 0, 128 + 40, 128 + 80)
+        adapter_axis['STICK_UP_DOWN']     = (1, 128 + 80, 128 + 40, 128 + 0, 128 - 0, 128 - 40, 128 - 80)
 
         # The following will generate code to builds the port->buttons data from payload.
         import math
@@ -322,52 +393,51 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
         ### In progress writing better logic
         ### This logic gets us most of the way there, but we do a bit more manual munging after
 
-        deadzone = 0.204
-        print(f'uint8_t stick_lr_val = {adapter_axis["STICK_LEFT"][1]};')
-        print(f'uint8_t stick_ud_val = {adapter_axis["STICK_UP"][1]};')
-        print('bool outside_deadzone = false;')
+        print(f'uint8_t stick_lr_val = {adapter_axis["STICK_LEFT_RIGHT"][3]};')
+        print(f'uint8_t stick_ud_val = {adapter_axis["STICK_UP_DOWN"][3]};')
         for key, payload_tup in payload_axis.items():
             adapt_tup = adapter_axis[key]
             if adapt_tup is not NotImplemented:
-                idx1, val_n1, val_e1 = payload_tup
-                idx2, val_n2, val_e2 = adapt_tup
-                if key.startswith('C'):
-                    continue
-                    if val_e1 > val_n1:
-                        print(f'if (payload[{idx1}] > {val_n1}) {{')
-                        print(f'    port->axis[{idx2}] = payload[{idx1}]  // Handle {key}')
-                        print('}')
-                    if val_e1 < val_n1:
-                        print(f'if (payload[{idx1}] < {val_n1}) {{')
-                        print(f'    port->axis[{idx2}] = payload[{idx1}]  // Handle {key}')
-                        print('}')
+                idx1, *vals1 = payload_tup
+                idx2, *vals2 = adapt_tup
+                import sympy as sym
+                p = sym.symbols(f'VAL')
+
+                if key in ['STICK_LEFT_RIGHT']:
+                    var = 'stick_lr_val'
                 else:
-                    import sympy as sym
-                    p = sym.symbols(f'VAL')
+                    var = 'stick_ud_val'
 
-                    dir_range = (val_e1 - val_n1)
-                    p_unit = (p - val_n1) / dir_range
-                    r = val_n2 + (p_unit * (val_e2 - val_n2))
+                v1 = vals1[0]
+                v2 = vals2[0]
+                raw = f'payload[{idx1}]'
+                print('')
+                print(f'// Handle {key}')
+                print(f'if ( {raw} < {v1} )')
+                print('{')
+                print(f'    {var} = {v2};  // Handle {key} extreme low')
+                print('}')
+                for i in range(len(vals1) - 1):
+                    v11 = vals1[i]
+                    v12 = vals1[i + 1]
+                    v21 = vals2[i]
+                    v22 = vals2[i + 1]
+
+                    range1 = v12 - v11
+                    range2 = v22 - v21
+                    el = '' if i == 0 else 'else '
+                    r = ((p - v11) / range1) * range2 + v21
                     expr = repr(r).replace('VAL', f'((float) payload[{idx1}])')
-                    dz_offset = int(abs(dir_range) * deadzone)
-
-                    if key in ['STICK_LEFT', 'STICK_RIGHT']:
-                        var = 'stick_lr_val'
-                    else:
-                        var = 'stick_ud_val'
-
-                    if val_e1 > val_n1:
-                        print(f'if (payload[{idx1}] > {val_n1 + dz_offset}) {{')
-                        # print(f'    port->axis[{idx2}] = (uint8_t) {expr};  // Handle {key}')
-                        print(f'    outside_deadzone = true;')
-                        print(f'    {var} = (uint8_t) ({expr});  // Handle {key}')
-                        print('}')
-                    if val_e1 < val_n1:
-                        print(f'if (payload[{idx1}] < {val_n1 - dz_offset}) {{')
-                        print(f'    outside_deadzone = true;')
-                        print(f'    {var} = (uint8_t) ({expr});  // Handle {key}')
-                        # print(f'    port->axis[{idx2}] = (uint8_t) {expr};  // Handle {key}')
-                        print('}')
+                    print(f'else if ( {raw} < {v12} )')
+                    print('{')
+                    print(f'    {var} = (uint8_t) ({expr});  // Handle {key} ramp')
+                    print('}')
+                v1 = vals1[-1]
+                v2 = vals2[-1]
+                print(f'else')
+                print('{')
+                print(f'    {var} = {v2};  // Handle {key} extreme high')
+                print('}')
     """*/
 
    wants_saturate = false;
@@ -408,32 +478,70 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
 
    uint8_t stick_lr_val = 128;
    uint8_t stick_ud_val = 128;
-   bool outside_deadzone = false;
-   if (payload[3] < 102) {
-       outside_deadzone = true;
-       stick_lr_val = (uint8_t) (5*((float) payload[3])/8 + 48);  // Handle STICK_LEFT
-   }
-   if (payload[3] > 153) {
-       outside_deadzone = true;
-       stick_lr_val = (uint8_t) (80*((float) payload[3])/127 + 6016/127);  // Handle STICK_RIGHT
-   }
-   if (payload[4] < 102) {
-       outside_deadzone = true;
-       stick_ud_val = (uint8_t) (208 - 80*((float) payload[4])/127);  // Handle STICK_UP
-   }
-   if (payload[4] > 153) {
-       outside_deadzone = true;
-       stick_ud_val = (uint8_t) (1659/8 - 5*((float) payload[4])/8);  // Handle STICK_DOWN
-   }
 
-   if (outside_deadzone) {
-       port->axis[0] = stick_lr_val;
-       port->axis[1] = stick_ud_val;
-   }
-   else{
-       port->axis[0] = 128;
-       port->axis[1] = 128;
-   }
+// Handle STICK_LEFT_RIGHT
+if ( payload[3] < 45 )
+{
+    stick_lr_val = 48;  // Handle STICK_LEFT_RIGHT extreme low
+}
+else if ( payload[3] < 81 )
+{
+    stick_lr_val = (uint8_t) (10*((float) payload[3])/9 - 2);  // Handle STICK_LEFT_RIGHT ramp
+}
+else if ( payload[3] < 97 )
+{
+    stick_lr_val = (uint8_t) (5*((float) payload[3])/2 - 229/2);  // Handle STICK_LEFT_RIGHT ramp
+}
+else if ( payload[3] < 159 )
+{
+    stick_lr_val = (uint8_t) (128);  // Handle STICK_LEFT_RIGHT ramp
+}
+else if ( payload[3] < 175 )
+{
+    stick_lr_val = (uint8_t) (5*((float) payload[3])/2 - 539/2);  // Handle STICK_LEFT_RIGHT ramp
+}
+else if ( payload[3] < 211 )
+{
+    stick_lr_val = (uint8_t) (10*((float) payload[3])/9 - 238/9);  // Handle STICK_LEFT_RIGHT ramp
+}
+else
+{
+    stick_lr_val = 208;  // Handle STICK_LEFT_RIGHT extreme high
+}
+
+// Handle STICK_UP_DOWN
+if ( payload[4] < 47 )
+{
+    stick_ud_val = 208;  // Handle STICK_UP_DOWN extreme low
+}
+else if ( payload[4] < 81 )
+{
+    stick_ud_val = (uint8_t) (4476/17 - 20*((float) payload[4])/17);  // Handle STICK_UP_DOWN ramp
+}
+else if ( payload[4] < 97 )
+{
+    stick_ud_val = (uint8_t) (741/2 - 5*((float) payload[4])/2);  // Handle STICK_UP_DOWN ramp
+}
+else if ( payload[4] < 159 )
+{
+    stick_ud_val = (uint8_t) (128);  // Handle STICK_UP_DOWN ramp
+}
+else if ( payload[4] < 175 )
+{
+    stick_ud_val = (uint8_t) (1051/2 - 5*((float) payload[4])/2);  // Handle STICK_UP_DOWN ramp
+}
+else if ( payload[4] < 209 )
+{
+    stick_ud_val = (uint8_t) (4996/17 - 20*((float) payload[4])/17);  // Handle STICK_UP_DOWN ramp
+}
+else
+{
+    stick_ud_val = 48;  // Handle STICK_UP_DOWN extreme high
+}
+
+
+   port->axis[0] = stick_lr_val;
+   port->axis[1] = stick_ud_val;
 
    port->axis[2] = payload[5];        // map C-lr to axis 2
    port->axis[3] = 255 - payload[6];  // map C-ud to axis 3
