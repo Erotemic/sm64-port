@@ -343,11 +343,11 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
 
         # Stike, the tuple will mean: payload_idx, left extreme, left mid, left zero, right zero, right mid, right extreme.
         # Idealized
-        #payload_axis['STICK_LEFT_RIGHT']  = (3, 128 - 63, 128 - 47, 128 - 31, 128 + 31, 128 + 47, 128 + 63)
-        #payload_axis['STICK_UP_DOWN']     = (4, 128 - 61, 128 - 45, 128 - 31, 128 + 31, 128 + 45, 128 + 61)
-        # Bumping these values to try and make things "feel right"
-        payload_axis['STICK_LEFT_RIGHT']  = (3, 128 - 83, 128 - 47, 128 - 31, 128 + 31, 128 + 47, 128 + 83)
-        payload_axis['STICK_UP_DOWN']     = (4, 128 - 81, 128 - 47, 128 - 31, 128 + 31, 128 + 47, 128 + 81)
+        payload_axis['STICK_LEFT_RIGHT']  = (3, 128 - 63, 128 - 47, 128 - 31, 128 + 31, 128 + 47, 128 + 63)
+        payload_axis['STICK_UP_DOWN']     = (4, 128 - 61, 128 - 45, 128 - 31, 128 + 31, 128 + 45, 128 + 61)
+        # Bumping these values to try and make things "feel right"?
+        # payload_axis['STICK_LEFT_RIGHT']  = (3, 128 - 83, 128 - 47, 128 - 31, 128 + 31, 128 + 47, 128 + 83)
+        # payload_axis['STICK_UP_DOWN']     = (4, 128 - 81, 128 - 47, 128 - 31, 128 + 31, 128 + 47, 128 + 81)
 
         # Mapping from button names to target bits to their expected bits in port->buttons
         adapter_buttons = {}
@@ -480,13 +480,13 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
    uint8_t stick_ud_val = 128;
 
 // Handle STICK_LEFT_RIGHT
-if ( payload[3] < 45 )
+if ( payload[3] < 65 )
 {
     stick_lr_val = 48;  // Handle STICK_LEFT_RIGHT extreme low
 }
 else if ( payload[3] < 81 )
 {
-    stick_lr_val = (uint8_t) (1.11111111111111*((float) payload[3]) - 2.0);  // Handle STICK_LEFT_RIGHT ramp
+    stick_lr_val = (uint8_t) (2.5*((float) payload[3]) - 114.5);  // Handle STICK_LEFT_RIGHT ramp
 }
 else if ( payload[3] < 97 )
 {
@@ -500,9 +500,9 @@ else if ( payload[3] < 175 )
 {
     stick_lr_val = (uint8_t) (2.5*((float) payload[3]) - 269.5);  // Handle STICK_LEFT_RIGHT ramp
 }
-else if ( payload[3] < 211 )
+else if ( payload[3] < 191 )
 {
-    stick_lr_val = (uint8_t) (1.11111111111111*((float) payload[3]) - 26.4444444444444);  // Handle STICK_LEFT_RIGHT ramp
+    stick_lr_val = (uint8_t) (2.5*((float) payload[3]) - 269.5);  // Handle STICK_LEFT_RIGHT ramp
 }
 else
 {
@@ -510,29 +510,29 @@ else
 }
 
 // Handle STICK_UP_DOWN
-if ( payload[4] < 47 )
+if ( payload[4] < 67 )
 {
     stick_ud_val = 208;  // Handle STICK_UP_DOWN extreme low
 }
-else if ( payload[4] < 81 )
+else if ( payload[4] < 83 )
 {
-    stick_ud_val = (uint8_t) (263.294117647059 - 1.17647058823529*((float) payload[4]));  // Handle STICK_UP_DOWN ramp
+    stick_ud_val = (uint8_t) (375.5 - 2.5*((float) payload[4]));  // Handle STICK_UP_DOWN ramp
 }
 else if ( payload[4] < 97 )
 {
-    stick_ud_val = (uint8_t) (370.5 - 2.5*((float) payload[4]));  // Handle STICK_UP_DOWN ramp
+    stick_ud_val = (uint8_t) (405.142857142857 - 2.85714285714286*((float) payload[4]));  // Handle STICK_UP_DOWN ramp
 }
 else if ( payload[4] < 159 )
 {
     stick_ud_val = (uint8_t) (128.000000000000);  // Handle STICK_UP_DOWN ramp
 }
-else if ( payload[4] < 175 )
+else if ( payload[4] < 173 )
 {
-    stick_ud_val = (uint8_t) (525.5 - 2.5*((float) payload[4]));  // Handle STICK_UP_DOWN ramp
+    stick_ud_val = (uint8_t) (582.285714285714 - 2.85714285714286*((float) payload[4]));  // Handle STICK_UP_DOWN ramp
 }
-else if ( payload[4] < 209 )
+else if ( payload[4] < 189 )
 {
-    stick_ud_val = (uint8_t) (293.882352941176 - 1.17647058823529*((float) payload[4]));  // Handle STICK_UP_DOWN ramp
+    stick_ud_val = (uint8_t) (520.5 - 2.5*((float) payload[4]));  // Handle STICK_UP_DOWN ramp
 }
 else
 {
