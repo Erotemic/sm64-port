@@ -18,7 +18,7 @@ static int8_t saturate(int v) {
 }
 
 static void controller_wup_init(void) {
-    printf("Initializing WUP Controller\n");
+    printf("Initializing WUP Controllers\n");
     pthread_t pid;
     pthread_create(&pid, NULL, wup_start, NULL);
 }
