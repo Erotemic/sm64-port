@@ -35,6 +35,7 @@
 #include <pthread.h>
 
 #include "macros.h"
+#include "../configfile.h"
 
 #if (!defined(LIBUSBX_API_VERSION) || LIBUSBX_API_VERSION < 0x01000102)                                \
     && (!defined(LIBUSB_API_VERSION) || LIBUSB_API_VERSION < 0x01000102)
@@ -162,272 +163,141 @@ static void handle_payload(int i, struct ports *port, unsigned char *payload) {
 
 static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *payload) {
     /*"""
-     *
-     *
-      References:
-      https://digitalcommons.calpoly.edu/cgi/viewcontent.cgi?article=1185&context=eesp
-      ipfs.io/ipfs/bafybeighb4imouukdmn4w77i5j72oovprbvkgstujlerlxiryf44zb3iny
+    References:
+    https://digitalcommons.calpoly.edu/cgi/viewcontent.cgi?article=1185&context=eesp
+    ipfs.io/ipfs/bafybeighb4imouukdmn4w77i5j72oovprbvkgstujlerlxiryf44zb3iny
 
-      http://ultra64.ca/files/documentation/online-manuals/man/pro-man/pro26/26-02.html#04.1
-           //
-           //http://n64devkit.square7.ch/pro-man/pro26/26-02.htm
+    http://ultra64.ca/files/documentation/online-manuals/man/pro-man/pro26/26-02.html#04.1
+         //
+         //http://n64devkit.square7.ch/pro-man/pro26/26-02.htm
 
-      The Control Stick's coordinate positions stick_x and stick_y are signed
-      characters with the range of -128 ~ 127. However, for the actual program we
-      recommend using values within the ranges shown below:
+    The Control Stick's coordinate positions stick_x and stick_y are signed
+    characters with the range of -128 ~ 127. However, for the actual program we
+    recommend using values within the ranges shown below:
 
-      Left/right X axis   +/- 61
-      Up/down Y axis      +/- 63
-      X axis incline      +/- 45
-      Y axis incline      +/- 47
+    Left/right X axis   +/- 61
+    Up/down Y axis      +/- 63
+    X axis incline      +/- 45
+    Y axis incline      +/- 47
 
-      +--------------------+-------------------+-------------+------------+
-      | Payload (unsigned) |  Payload (signed) | OSContValue |  Note      |
-      +--------------------+-------------------+-------------+------------+
-      |           127      |             0     |      0      |  Deadzone  |
-      +--------------------+-------------------+-------------+------------+
-      |           100      |           -27     |      0      |  Deadzone  |
-      +--------------------+-------------------+-------------+------------+
-      |            99      |           -28     |      1      |  Minimum   |
-      +--------------------+-------------------+-------------+------------+
-      |            80      |           -47     |     40      |  Incline   |
-      +--------------------+-------------------+-------------+------------+
-      |            64      |           -63     |     80      |  Maximum   |
-      +--------------------+-------------------+-------------+------------+
-      |             0      |          -127     |     80      |  Saturated |
-      +--------------------+-------------------+-------------+------------+
+    +--------------------+-------------------+-------------+------------+
+    | Payload (unsigned) |  Payload (signed) | OSContValue |  Note      |
+    +--------------------+-------------------+-------------+------------+
+    |           127      |             0     |      0      |  Deadzone  |
+    +--------------------+-------------------+-------------+------------+
+    |           100      |           -27     |      0      |  Deadzone  |
+    +--------------------+-------------------+-------------+------------+
+    |            99      |           -28     |      1      |  Minimum   |
+    +--------------------+-------------------+-------------+------------+
+    |            80      |           -47     |     40      |  Incline   |
+    +--------------------+-------------------+-------------+------------+
+    |            64      |           -63     |     80      |  Maximum   |
+    +--------------------+-------------------+-------------+------------+
+    |             0      |          -127     |     80      |  Saturated |
+    +--------------------+-------------------+-------------+------------+
 
 
-      Stick Value Ranges for Differenct Contrllers
+    Stick Value Ranges for Differenct Contrllers
 
-          On an OEM N64 controller, the following ranges were measured:
-              left, neutral, right = 13, 128, 243
-              top, neutral, bottom = 12, 127, 254
+        On an OEM N64 controller, the following ranges were measured:
+            left, neutral, right = 13, 128, 243
+            top, neutral, bottom = 12, 127, 254
 
-          On an Hori MiniPad, the following ranges were measured:
-              left, neutral, right =  2, 102, 245
-              top, neutral, bottom =  2, 127, 254
-
-
-      +-------------------+----------------+----------------+----------------+
-      |     Direction     | Payload (Gray) | Payload (Blue) | Payload (Pink) |
-      +-------------------+----------------+----------------+----------------+
-      |       Y-Up-Max    |            24  |            12  |              0 |
-      +-------------------+----------------+----------------+----------------+
-      |       Y-Down-Max  |            240 |            252 |            250 |
-      +-------------------+----------------+----------------+----------------+
-      |       X-Left-Max  |             18 |             11 |              0 |
-      +-------------------+----------------+----------------+----------------+
-      |       X-Right-Max |            234 |            246 |            255 |
-      +-------------------+----------------+----------------+----------------+
-      |       X-Neutral   |       ~102-128 |       ~102-154 |       ~102-128 |
-      +-------------------+----------------+----------------+----------------+
-      |       y-Neutral   |       ~102-153 |       ~102-153 |       ~102-127 |
-      +-------------------+----------------+----------------+----------------+
-
-      Gray and Blue are OEM controllers.  Pink is the HoriMiniPad.
+        On an Hori MiniPad, the following ranges were measured:
+            left, neutral, right =  2, 102, 245
+            top, neutral, bottom =  2, 127, 254
 
 
-      This function is written to support the original N64 controller plugged
-      in using a hyperkin adapter. We do this by simply coercing the payload
-      into an adapter buttons and axis that controller_wup.c will expect.
+    +-------------------+----------------+----------------+----------------+
+    |     Direction     | Payload (Gray) | Payload (Blue) | Payload (Pink) |
+    +-------------------+----------------+----------------+----------------+
+    |       Y-Up-Max    |            24  |            12  |              0 |
+    +-------------------+----------------+----------------+----------------+
+    |       Y-Down-Max  |            240 |            252 |            250 |
+    +-------------------+----------------+----------------+----------------+
+    |       X-Left-Max  |             18 |             11 |              0 |
+    +-------------------+----------------+----------------+----------------+
+    |       X-Right-Max |            234 |            246 |            255 |
+    +-------------------+----------------+----------------+----------------+
+    |       X-Neutral   |       ~102-128 |       ~102-154 |       ~102-128 |
+    +-------------------+----------------+----------------+----------------+
+    |       y-Neutral   |       ~102-153 |       ~102-153 |       ~102-127 |
+    +-------------------+----------------+----------------+----------------+
 
-      https://www.hyperkin.com/controller-adapter-for-n64r-controller-compatible-with-nintendo-switchr-pc-hyperkin.html
+    Gray and Blue are OEM controllers.  Pink is the HoriMiniPad.
 
-      Reminder, you will need custom udev rules to make this work:
-      in /etc/udev/rules.d/80-wup028.rules
 
-          SUBSYSTEM=="usb", ATTRS{idVendor}=="20d6", ATTRS{idProduct}=="a710", MODE="0666"
-          SUBSYSTEM=="usb_device", ATTRS{idVendor}=="20d6", ATTRS{idProduct}=="a710", MODE="0666"
+    This function is written to support the original N64 controller plugged
+    in using a hyperkin adapter. We do this by simply coercing the payload
+    into an adapter buttons and axis that controller_wup.c will expect.
 
-      Dont forget to `sudo udevadm control --reload-rules` and unplug/replug the
-      controller in after!
+    https://www.hyperkin.com/controller-adapter-for-n64r-controller-compatible-with-nintendo-switchr-pc-hyperkin.html
 
-      Technical Details:
-          An example payload from libusb with no (i.e. neutral) inputs is as follows:
+    Reminder, you will need custom udev rules to make this work:
+    in /etc/udev/rules.d/80-wup028.rules
 
-          payload[0] = 0,  # main buttons
-          payload[1] = 0,  # start button
-          payload[2] = 8,  # d-pad
-          payload[3] = 128,  # stick-lr
-          payload[4] = 127,  # stick-ud
-          payload[5] = 128,  # c-buttons
-          payload[6] = 127,  # c-buttons
-          payload[7] = 0,    # unused
+        SUBSYSTEM=="usb", ATTRS{idVendor}=="20d6", ATTRS{idProduct}=="a710", MODE="0666"
+        SUBSYSTEM=="usb_device", ATTRS{idVendor}=="20d6", ATTRS{idProduct}=="a710", MODE="0666"
 
-          When a button on the N64 controller is pressed the following changes occur:
+    Dont forget to `sudo udevadm control --reload-rules` and unplug/replug the
+    controller in after!
 
-          Button  =    data    ==  neutral -> pressed
-          Z       = payload[0] ==   0  ->  64
-          R       = payload[0] ==   0  ->  32
-          L       = payload[0] ==   0  ->  16
-          A       = payload[0] ==   0  ->   4
-          B       = payload[0] ==   0  ->   2
-          start   = payload[1] ==   0  ->   2
-          c-right = payload[5] == 128  -> 255
-          c-left  = payload[5] == 128  ->   0
-          c-up    = payload[6] == 127  ->   0
-          c-down  = payload[6] == 127  -> 255
-          d-up    = payload[2] ==   8  ->   0
-          d-down  = payload[2] ==   8  ->   4
-          d-left  = payload[2] ==   8  ->   6
-          d-right = payload[2] ==   8  ->   2
+    Technical Details:
+        An example payload from libusb with no (i.e. neutral) inputs is as follows:
 
-          When the stick on the N64 controller is tilted the following changes occur
+        payload[0] = 0,  # main buttons
+        payload[1] = 0,  # start button
+        payload[2] = 8,  # d-pad
+        payload[3] = 128,  # stick-lr
+        payload[4] = 127,  # stick-ud
+        payload[5] = 128,  # c-buttons
+        payload[6] = 127,  # c-buttons
+        payload[7] = 0,    # unused
 
-          Stick Tilt Left  = payload[3] = ~128 -> ~0
-          Stick Tilt Right = payload[3] = ~128 -> ~255
-          Stick Tilt Up    = payload[4] = ~127 -> ~0
-          Stick Tilt Down  = payload[4] = ~127 -> ~255
+        When a button on the N64 controller is pressed the following changes occur:
 
-          The neutral position and ranges of the stick seems to depend on the controller itself.
+        Button  =    data    ==  neutral -> pressed
+        Z       = payload[0] ==   0  ->  64
+        R       = payload[0] ==   0  ->  32
+        L       = payload[0] ==   0  ->  16
+        A       = payload[0] ==   0  ->   4
+        B       = payload[0] ==   0  ->   2
+        start   = payload[1] ==   0  ->   2
+        c-right = payload[5] == 128  -> 255
+        c-left  = payload[5] == 128  ->   0
+        c-up    = payload[6] == 127  ->   0
+        c-down  = payload[6] == 127  -> 255
+        d-up    = payload[2] ==   8  ->   0
+        d-down  = payload[2] ==   8  ->   4
+        d-left  = payload[2] ==   8  ->   6
+        d-right = payload[2] ==   8  ->   2
 
-          On an OEM N64 controller, the following ranges were measured:
-              left, neutral, right = 13, 128, 243
-              top, neutral, bottom = 12, 127, 254
+        When the stick on the N64 controller is tilted the following changes occur
 
-          On an Hori MiniPad, the following ranges were measured:
-              left, neutral, right =  2, 102, 245
-              top, neutral, bottom =  2, 127, 254
+        Stick Tilt Left  = payload[3] = ~128 -> ~0
+        Stick Tilt Right = payload[3] = ~128 -> ~255
+        Stick Tilt Up    = payload[4] = ~127 -> ~0
+        Stick Tilt Down  = payload[4] = ~127 -> ~255
 
-          To integrate this logic, we seek to make the output of this function behave
-          as expected by the controller_wup.c file.  This requires us to map the
-          buttons and axis into port->buttons and port->axis in a way that upstream
-          logic expects. The following Python program captures the expected bits
-          associated with each button in the desired adapter output, and what is
-          given to us in our payload. This Python logic is used to generate the C
-          code that ultimately performs this task.
+        The neutral position and ranges of the stick seems to depend on the controller itself.
 
-          # Mapping from button names to the payload index and associated bit value.
-          payload_buttons = {}
-          payload_buttons['Z'] = (0, 64)
-          payload_buttons['R'] = (0, 32)
-          payload_buttons['L'] = (0, 16)
-          payload_buttons['A'] = (0, 4)
-          payload_buttons['B'] = (0, 2)
-          payload_buttons['START'] = (1, 2)
+        On an OEM N64 controller, the following ranges were measured:
+            left, neutral, right = 13, 128, 243
+            top, neutral, bottom = 12, 127, 254
 
-          # Mapping from axis directions to the payload index, neutral, and extreme value.
-          payload_axis = {}
-          #payload_axis['C_LEFT']  = (5, 128, 0)
-          #payload_axis['C_RIGHT'] = (5, 128, 255)
-          #payload_axis['C_UP']    = (6, 127, 0)
-          #payload_axis['C_DOWN']  = (6, 127, 255)
-          #payload_axis['D_LEFT']  = (2, 8, 0)
-          #payload_axis['D_RIGHT'] = (2, 8, 4)
-          #payload_axis['D_UP']    = (2, 8, 6)
-          #payload_axis['D_DOWN']  = (2, 8, 2)
+        On an Hori MiniPad, the following ranges were measured:
+            left, neutral, right =  2, 102, 245
+            top, neutral, bottom =  2, 127, 254
 
-          """
-          From the manual
-          The Control Stick's coordinate positions stick_x and stick_y
-          are signed characters with the range of -128 ~ 127.
-          However, for the actual program we recommend using values
-          within the ranges shown below:
+        To integrate this logic, we seek to make the output of this function behave
+        as expected by the controller_wup.c file.  This requires us to map the
+        buttons and axis into port->buttons and port->axis in a way that upstream
+        logic expects. The following Python program captures the expected bits
+        associated with each button in the desired adapter output, and what is
+        given to us in our payload. This Python logic is used to generate the C
+        code that ultimately performs this task.
 
-          Left/right X axis   +/- 61
-          Up/down Y axis      +/- 63
-          X axis incline      +/- 45
-          Y axis incline      +/- 47
-          """
-
-          # Stike, the tuple will mean: payload_idx, left extreme, left mid, left zero, right zero,
-     right mid, right extreme. # Idealized payload_axis['STICK_LEFT_RIGHT']  = (3, 128 - 63, 128 - 47,
-     128 - 31, 128 + 31, 128 + 47, 128 + 63) payload_axis['STICK_UP_DOWN']     = (4, 128 - 61, 128 - 45,
-     128 - 31, 128 + 31, 128 + 45, 128 + 61) # Bumping these values to try and make things "feel right"?
-          payload_axis['STICK_LEFT_RIGHT']  = (3, 128 - 103, 128 - 57, 128 - 31, 128 + 31, 128 + 57, 128
-     + 103) payload_axis['STICK_UP_DOWN']     = (4, 128 - 101, 128 - 57, 128 - 31, 128 + 31, 128 + 57,
-     128 + 101)
-
-          # Mapping from button names to target bits to their expected bits in port->buttons
-          adapter_buttons = {}
-          adapter_buttons['START'] = 0x0001
-          adapter_buttons['Z'] = 0x0008;
-          adapter_buttons['R'] = 0x0004;
-          adapter_buttons['A'] = 0x0100;
-          adapter_buttons['B'] = 0x0200;
-          adapter_buttons['L'] = 0x1000;
-
-          # Mapping from the button direction to its associated index in port->axis, neutral value, and
-     extreme value. adapter_axis = {} #adapter_axis['C_LEFT']  = (2, 0X80, 0x40)
-          #adapter_axis['C_RIGHT'] = (2, 0X80, 0xC0)
-          #adapter_axis['C_UP']    = (3, 0X80, 0x40)
-          #adapter_axis['C_DOWN']  = (3, 0X80, 0xC0)
-          #adapter_axis['D_LEFT']  = NotImplemented
-          #adapter_axis['D_RIGHT'] = NotImplemented
-          #adapter_axis['D_UP']    = NotImplemented
-          #adapter_axis['D_DOWN']  = NotImplemented
-
-          # Mapping from the button direction to its associated index in port->axis, left-extreme,
-     left-ramp, left-min, right-min, right-ramp, right-extreme # Mapping from the button direction to
-     its associated index in port->axis, up-extreme, up-ramp, up-min, down-min, down-ramp, down-extreme
-          # Saturation values should be -80 to 80
-          adapter_axis['STICK_LEFT_RIGHT']  = (0, 128 - 80, 128 - 40, 128 + 0, 128 + 0, 128 + 40, 128 +
-     80) adapter_axis['STICK_UP_DOWN']     = (1, 128 + 80, 128 + 40, 128 + 0, 128 - 0, 128 - 40, 128 -
-     80)
-
-          # The following will generate code to builds the port->buttons data from payload.
-          import math
-          button_parts = []
-          for k, (idx, val) in payload_buttons.items():
-              adapt_val = adapter_buttons[k]
-              if val > adapt_val:
-                  shift = int(math.log2(val / adapt_val))
-                  button_parts.append(f' (uint16_t) (payload[{idx}] & {val:#04x}) >> {shift} |  // map
-     {k} to {adapt_val:#04x} ') else: shift = int(math.log2(adapt_val / val)) button_parts.append(f'
-     (uint16_t) (payload[{idx}] & {val:#04x}) << {shift} |  // map {k} to {adapt_val:#04x}')
-          print('uint16_t btns = (')
-          print('\n'.join(button_parts))
-          print(');')
-
-          ### In progress writing better logic
-          ### This logic gets us most of the way there, but we do a bit more manual munging after
-
-          print(f'uint8_t stick_lr_val = {adapter_axis["STICK_LEFT_RIGHT"][3]};')
-          print(f'uint8_t stick_ud_val = {adapter_axis["STICK_UP_DOWN"][3]};')
-          for key, payload_tup in payload_axis.items():
-              adapt_tup = adapter_axis[key]
-              if adapt_tup is not NotImplemented:
-                  idx1, *vals1 = payload_tup
-                  idx2, *vals2 = adapt_tup
-                  import sympy as sym
-                  p = sym.symbols(f'VAL')
-
-                  if key in ['STICK_LEFT_RIGHT']:
-                      var = 'stick_lr_val'
-                  else:
-                      var = 'stick_ud_val'
-
-                  v1 = vals1[0]
-                  v2 = vals2[0]
-                  raw = f'payload[{idx1}]'
-                  print('')
-                  print(f'// Handle {key}')
-                  print(f'if ( {raw} < {v1} )')
-                  print('{')
-                  print(f'    {var} = {v2};  // Handle {key} extreme low')
-                  print('}')
-                  for i in range(len(vals1) - 1):
-                      v11 = vals1[i]
-                      v12 = vals1[i + 1]
-                      v21 = vals2[i]
-                      v22 = vals2[i + 1]
-
-                      range1 = v12 - v11
-                      range2 = v22 - v21
-                      el = '' if i == 0 else 'else '
-                      r = (((p - v11) / range1) * range2 + v21).evalf()
-                      expr = repr(r).replace('VAL', f'((float) payload[{idx1}])')
-                      print(f'else if ( {raw} < {v12} )')
-                      print('{')
-                      print(f'    {var} = (uint8_t) ({expr});  // Handle {key} ramp')
-                      print('}')
-                  v1 = vals1[-1]
-                  v2 = vals2[-1]
-                  print(f'else')
-                  print('{')
-                  print(f'    {var} = {v2};  // Handle {key} extreme high')
-                  print('}')
+        The python is moved to update_wup_logic.py
       """*/
 
     wants_saturate = false;
@@ -461,53 +331,109 @@ static void handle_hyperkin_payload(int i, struct ports *port, unsigned char *pa
     );
     port->buttons = btns;
 
-    uint8_t stick_lr_val = 128;
-    uint8_t stick_ud_val = 128;
+    /*float deadZone256 = 256 * (((float) configDeadZone) / 32768);*/
+    float deadZone256 = 31;
+
+    // Source payload magnitudes to be mapped
+    float LR_src1 = 128 - 102;
+    float LR_src2 = 128 -  57;
+    float LR_src3 = 128 - deadZone256;
+    float LR_src4 = 128 + deadZone256;
+    /*float LR_src3 = 128 - 31;*/
+    /*float LR_src4 = 128 + 31;*/
+    float LR_src5 = 128 +  57;
+    float LR_src6 = 128 + 103;
+
+    float UD_src1 = 128 - 101;
+    float UD_src2 = 128 -  57;
+    float UD_src3 = 128 - deadZone256;
+    float UD_src4 = 128 + deadZone256;
+    /*float UD_src3 = 128 - 31;*/
+    /*float UD_src4 = 128 + 31;*/
+    float UD_src5 = 128 +  57;
+    float UD_src6 = 128 + 101;
+
+    printf("configDeadZone = %d\n", configDeadZone);
+    printf("LR_src3 = %f\n", LR_src3);
+    printf("UD_src3 = %f\n", UD_src3);
+
+    // Destination adapater magnitudes to map to
+    float LR_dst1 = 128 - 80;
+    float LR_dst2 = 128 - 40;
+    float LR_dst3 = 128 -  0;
+    float LR_dst4 = 128 +  0;
+    float LR_dst5 = 128 + 40;
+    float LR_dst6 = 128 + 80;
+
+    float UD_dst1 = 128 + 80;
+    float UD_dst2 = 128 + 40;
+    float UD_dst3 = 128 +  0;
+    float UD_dst4 = 128 +  0;
+    float UD_dst5 = 128 - 40;
+    float UD_dst6 = 128 - 80;
+
+    // Default to a zero position
+    uint8_t stick_lr_val = (uint8_t) LR_dst3;
+    uint8_t stick_ud_val = (uint8_t) UD_dst3;
 
     // Handle STICK_LEFT_RIGHT
-    if (payload[3] < 25) {
-        stick_lr_val = 48; // Handle STICK_LEFT_RIGHT extreme low
-    } else if (payload[3] < 71) {
-        stick_lr_val = (uint8_t) (0.869565217391304 * ((float) payload[3])
-                                  + 26.2608695652174); // Handle STICK_LEFT_RIGHT ramp
-    } else if (payload[3] < 97) {
-        stick_lr_val = (uint8_t) (1.53846153846154 * ((float) payload[3])
-                                  - 21.2307692307692); // Handle STICK_LEFT_RIGHT ramp
-    } else if (payload[3] < 159) {
-        stick_lr_val = (uint8_t) (128.000000000000); // Handle STICK_LEFT_RIGHT ramp
-    } else if (payload[3] < 185) {
-        stick_lr_val = (uint8_t) (1.53846153846154 * ((float) payload[3])
-                                  - 116.615384615385); // Handle STICK_LEFT_RIGHT ramp
-    } else if (payload[3] < 231) {
-        stick_lr_val = (uint8_t) (0.869565217391304 * ((float) payload[3])
-                                  + 7.1304347826087); // Handle STICK_LEFT_RIGHT ramp
-    } else {
-        stick_lr_val = 208; // Handle STICK_LEFT_RIGHT extreme high
+    if ( payload[3] < LR_src1 )
+    {
+        stick_lr_val = LR_dst1;  // Handle STICK_LEFT_RIGHT extreme low
+    }
+    else if ( payload[3] < LR_src2 )
+    {
+        stick_lr_val = (uint8_t) (LR_dst1 + (-LR_dst1 + LR_dst2)*(-LR_src1 + ((float) payload[3]))/(-LR_src1 + LR_src2));  // Handle STICK_LEFT_RIGHT ramp
+    }
+    else if ( payload[3] < LR_src3 )
+    {
+        stick_lr_val = (uint8_t) (LR_dst2 + (-LR_dst2 + LR_dst3)*(-LR_src2 + ((float) payload[3]))/(-LR_src2 + LR_src3));  // Handle STICK_LEFT_RIGHT ramp
+    }
+    else if ( payload[3] < LR_src4 )
+    {
+        stick_lr_val = (uint8_t) (LR_dst3 + (-LR_dst3 + LR_dst4)*(-LR_src3 + ((float) payload[3]))/(-LR_src3 + LR_src4));  // Handle STICK_LEFT_RIGHT ramp
+    }
+    else if ( payload[3] < LR_src5 )
+    {
+        stick_lr_val = (uint8_t) (LR_dst4 + (-LR_dst4 + LR_dst5)*(-LR_src4 + ((float) payload[3]))/(-LR_src4 + LR_src5));  // Handle STICK_LEFT_RIGHT ramp
+    }
+    else if ( payload[3] < LR_src6 )
+    {
+        stick_lr_val = (uint8_t) (LR_dst5 + (-LR_dst5 + LR_dst6)*(-LR_src5 + ((float) payload[3]))/(-LR_src5 + LR_src6));  // Handle STICK_LEFT_RIGHT ramp
+    }
+    else
+    {
+        stick_lr_val = LR_dst6;  // Handle STICK_LEFT_RIGHT extreme high
     }
 
     // Handle STICK_UP_DOWN
-    if (payload[4] < 27) {
-        stick_ud_val = 208; // Handle STICK_UP_DOWN extreme low
-    } else if (payload[4] < 71) {
-        stick_ud_val =
-            (uint8_t) (232.545454545455
-                       - 0.909090909090909 * ((float) payload[4])); // Handle STICK_UP_DOWN ramp
-    } else if (payload[4] < 97) {
-        stick_ud_val =
-            (uint8_t) (277.230769230769
-                       - 1.53846153846154 * ((float) payload[4])); // Handle STICK_UP_DOWN ramp
-    } else if (payload[4] < 159) {
-        stick_ud_val = (uint8_t) (128.000000000000); // Handle STICK_UP_DOWN ramp
-    } else if (payload[4] < 185) {
-        stick_ud_val =
-            (uint8_t) (372.615384615385
-                       - 1.53846153846154 * ((float) payload[4])); // Handle STICK_UP_DOWN ramp
-    } else if (payload[4] < 229) {
-        stick_ud_val =
-            (uint8_t) (256.181818181818
-                       - 0.909090909090909 * ((float) payload[4])); // Handle STICK_UP_DOWN ramp
-    } else {
-        stick_ud_val = 48; // Handle STICK_UP_DOWN extreme high
+    if ( payload[4] < UD_src1 )
+    {
+        stick_ud_val = UD_dst1;  // Handle STICK_UP_DOWN extreme low
+    }
+    else if ( payload[4] < UD_src2 )
+    {
+        stick_ud_val = (uint8_t) (UD_dst1 + (-UD_dst1 + UD_dst2)*(-UD_src1 + ((float) payload[4]))/(-UD_src1 + UD_src2));  // Handle STICK_UP_DOWN ramp
+    }
+    else if ( payload[4] < UD_src3 )
+    {
+        stick_ud_val = (uint8_t) (UD_dst2 + (-UD_dst2 + UD_dst3)*(-UD_src2 + ((float) payload[4]))/(-UD_src2 + UD_src3));  // Handle STICK_UP_DOWN ramp
+    }
+    else if ( payload[4] < UD_src4 )
+    {
+        stick_ud_val = (uint8_t) (UD_dst3 + (-UD_dst3 + UD_dst4)*(-UD_src3 + ((float) payload[4]))/(-UD_src3 + UD_src4));  // Handle STICK_UP_DOWN ramp
+    }
+    else if ( payload[4] < UD_src5 )
+    {
+        stick_ud_val = (uint8_t) (UD_dst4 + (-UD_dst4 + UD_dst5)*(-UD_src4 + ((float) payload[4]))/(-UD_src4 + UD_src5));  // Handle STICK_UP_DOWN ramp
+    }
+    else if ( payload[4] < UD_src6 )
+    {
+        stick_ud_val = (uint8_t) (UD_dst5 + (-UD_dst5 + UD_dst6)*(-UD_src5 + ((float) payload[4]))/(-UD_src5 + UD_src6));  // Handle STICK_UP_DOWN ramp
+    }
+    else
+    {
+        stick_ud_val = UD_dst6;  // Handle STICK_UP_DOWN extreme high
     }
 
     port->axis[0] = stick_lr_val;

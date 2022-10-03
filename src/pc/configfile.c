@@ -45,6 +45,7 @@ unsigned int configKeyStickDown  = 0x1F;
 unsigned int configKeyStickLeft  = 0x1E;
 unsigned int configKeyStickRight = 0x20;
 // Deadzone value used for SDL and XInput (and WUP?) controllers
+// this number is the minimum magnitude out of (2 ** 15)
 unsigned int configDeadZone      = 4960;
 
 
