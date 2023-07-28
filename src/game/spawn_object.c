@@ -16,6 +16,9 @@
 #include "spawn_object.h"
 #include "types.h"
 
+
+#define DRAW_DISTANCE_COEFF 0.1
+
 /**
  * An unused linked list struct that seems to have been replaced by ObjectNode.
  */
@@ -308,9 +311,9 @@ struct Object *allocate_object(struct ObjectNode *objList) {
 
     obj->oCollisionDistance = 1000.0f;
     if (gCurrLevelNum == LEVEL_TTC) {
-        obj->oDrawingDistance = 2000.0f;
+        obj->oDrawingDistance = 2000.0f * DRAW_DISTANCE_COEFF;
     } else {
-        obj->oDrawingDistance = 4000.0f;
+        obj->oDrawingDistance = 4000.0f * DRAW_DISTANCE_COEFF;
     }
 
     mtxf_identity(obj->transform);

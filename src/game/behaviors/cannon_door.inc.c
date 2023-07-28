@@ -1,4 +1,6 @@
 // cannon.c.inc
+//
+#define DRAW_DISTANCE_COEFF 0.1
 
 void bhv_cannon_closed_init(void) {
     struct Object *cannon;
@@ -41,7 +43,7 @@ void bhv_cannon_closed_loop(void) {
         case CANNON_TRAP_DOOR_ACT_CLOSED:
             o->oVelX = 0;
             o->oVelY = 0;
-            o->oDrawingDistance = 4000.0f;
+            o->oDrawingDistance = 4000.0f * DRAW_DISTANCE_COEFF;
 
             if (save_file_is_cannon_unlocked() == 1)
                 o->oAction = CANNON_TRAP_DOOR_ACT_CAM_ZOOM;

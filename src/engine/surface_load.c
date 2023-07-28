@@ -15,6 +15,8 @@
 #include "game/object_list_processor.h"
 #include "surface_load.h"
 
+#define DRAW_DISTANCE_COEFF 0.1
+
 s32 unused8038BE90;
 
 /**
@@ -827,7 +829,7 @@ void load_object_collision_model(void) {
     // If the object collision is supposed to be loaded more than the
     // drawing distance of 4000, extend the drawing range.
     if (gCurrentObject->oCollisionDistance > 4000.0f) {
-        gCurrentObject->oDrawingDistance = gCurrentObject->oCollisionDistance;
+        gCurrentObject->oDrawingDistance = gCurrentObject->oCollisionDistance * DRAW_DISTANCE_COEFF;
     }
 
     // Update if no Time Stop, in range, and in the current room.

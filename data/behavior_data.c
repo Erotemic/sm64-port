@@ -56,6 +56,8 @@
 #include "make_const_nonconst.h"
 #include "behavior_data.h"
 
+#define DRAW_DISTANCE_COEFF 0.1
+
 #define BC_B(a) _SHIFTL(a, 24, 8)
 #define BC_BB(a, b) (_SHIFTL(a, 24, 8) | _SHIFTL(b, 16, 8))
 #define BC_BBBB(a, b, c, d) (_SHIFTL(a, 24, 8) | _SHIFTL(b, 16, 8) | _SHIFTL(c, 8, 8) | _SHIFTL(d, 0, 8))
@@ -114,7 +116,7 @@
 // Often used to end behavior scripts that do not contain an infinite loop.
 #define BREAK() \
     BC_B(0x0A)
-    
+
 // Exits the behavior script, unused.
 #define BREAK_UNUSED() \
     BC_B(0x0B)
@@ -175,15 +177,15 @@
 #define ADD_INT_RAND_RSHIFT(field, min, rshift) \
     BC_BBH(0x17, field, min), \
     BC_H(rshift)
-    
+
 // No operation. Unused.
 #define CMD_NOP_1(field) \
     BC_BB(0x18, field)
-    
+
 // No operation. Unused.
 #define CMD_NOP_2(field) \
     BC_BB(0x19, field)
-    
+
 // No operation. Unused.
 #define CMD_NOP_3(field) \
     BC_BB(0x1A, field)
@@ -337,7 +339,7 @@ const BehaviorScript bhvStarDoor[] = {
     OR_INT(oFlags, (OBJ_FLAG_ACTIVE_FROM_AFAR | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
     SET_HITBOX(/*Radius*/ 80, /*Height*/ 100),
     SET_HOME(),
-    SET_FLOAT(oDrawingDistance, 20000),
+    SET_FLOAT(oDrawingDistance, 20000 * DRAW_DISTANCE_COEFF),
     CALL_NATIVE(bhv_door_init),
     SET_INT(oIntangibleTimer, 0),
     BEGIN_LOOP(),
@@ -708,7 +710,7 @@ const BehaviorScript bhvTower[] = {
     OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
     LOAD_COLLISION_DATA(wf_seg7_collision_tower),
     SET_FLOAT(oCollisionDistance, 3000),
-    SET_FLOAT(oDrawingDistance, 20000),
+    SET_FLOAT(oDrawingDistance, 20000 * DRAW_DISTANCE_COEFF),
     BEGIN_LOOP(),
         CALL_NATIVE(load_object_collision_model),
     END_LOOP(),
@@ -832,7 +834,7 @@ const BehaviorScript bhvWarpPipe[] = {
     OR_INT(oFlags, (OBJ_FLAG_SET_FACE_YAW_TO_MOVE_YAW | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
     SET_INT(oInteractType, INTERACT_WARP),
     LOAD_COLLISION_DATA(warp_pipe_seg3_collision_03009AC8),
-    SET_FLOAT(oDrawingDistance, 16000),
+    SET_FLOAT(oDrawingDistance, 16000 * DRAW_DISTANCE_COEFF),
     SET_INT(oIntangibleTimer, 0),
     SET_HITBOX(/*Radius*/ 70, /*Height*/ 50),
     BEGIN_LOOP(),
@@ -1104,7 +1106,7 @@ const BehaviorScript bhvThwomp2[] = {
     ADD_FLOAT(oPosY, 1),
     SET_HOME(),
     SCALE(/*Unused*/ 0, /*Field*/ 140),
-    SET_FLOAT(oDrawingDistance, 4000),
+    SET_FLOAT(oDrawingDistance, 4000 * DRAW_DISTANCE_COEFF),
     BEGIN_LOOP(),
         CALL_NATIVE(bhv_grindel_thwomp_loop),
         CALL_NATIVE(load_object_collision_model),
@@ -1119,7 +1121,7 @@ const BehaviorScript bhvThwomp[] = {
     ADD_FLOAT(oPosY, 1),
     SCALE(/*Unused*/ 0, /*Field*/ 140),
     SET_HOME(),
-    SET_FLOAT(oDrawingDistance, 4000),
+    SET_FLOAT(oDrawingDistance, 4000 * DRAW_DISTANCE_COEFF),
     BEGIN_LOOP(),
         CALL_NATIVE(bhv_grindel_thwomp_loop),
         CALL_NATIVE(load_object_collision_model),
@@ -2002,7 +2004,7 @@ const BehaviorScript bhvTiltingBowserLavaPlatform[] = {
     BEGIN(OBJ_LIST_SURFACE),
     OR_INT(oFlags, (OBJ_FLAG_COMPUTE_ANGLE_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
     LOAD_COLLISION_DATA(bowser_2_seg7_collision_tilting_platform),
-    SET_FLOAT(oDrawingDistance, 20000),
+    SET_FLOAT(oDrawingDistance, 20000 * DRAW_DISTANCE_COEFF),
     SET_FLOAT(oCollisionDistance, 20000),
     SET_INT(oFaceAngleYaw, 0),
     SET_HOME(),
@@ -2015,7 +2017,7 @@ const BehaviorScript bhvTiltingBowserLavaPlatform[] = {
 const BehaviorScript bhvFallingBowserPlatform[] = {
     BEGIN(OBJ_LIST_SURFACE),
     OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
-    SET_FLOAT(oDrawingDistance, 20000),
+    SET_FLOAT(oDrawingDistance, 20000 * DRAW_DISTANCE_COEFF),
     SET_FLOAT(oCollisionDistance, 20000),
     SET_HOME(),
     BEGIN_LOOP(),
@@ -2422,7 +2424,7 @@ const BehaviorScript bhvToxBox[] = {
     OR_INT(oFlags, (OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_SET_FACE_YAW_TO_MOVE_YAW | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
     LOAD_COLLISION_DATA(ssl_seg7_collision_tox_box),
     ADD_FLOAT(oPosY, 256),
-    SET_FLOAT(oDrawingDistance, 8000),
+    SET_FLOAT(oDrawingDistance, 8000 * DRAW_DISTANCE_COEFF),
     SET_HOME(),
     BEGIN_LOOP(),
         CALL_NATIVE(bhv_tox_box_loop),
@@ -2441,7 +2443,7 @@ const BehaviorScript bhvPiranhaPlant[] = {
     SET_INT(oDamageOrCoinValue, 3),
     SET_INT(oNumLootCoins, 5),
     SPAWN_CHILD(/*Model*/ MODEL_BUBBLE, /*Behavior*/ bhvPiranhaPlantBubble),
-    SET_FLOAT(oDrawingDistance, 2000),
+    SET_FLOAT(oDrawingDistance, 2000 * DRAW_DISTANCE_COEFF),
     SET_HOME(),
     BEGIN_LOOP(),
         CALL_NATIVE(bhv_piranha_plant_loop),
@@ -2646,7 +2648,7 @@ const BehaviorScript bhvBowserSubDoor[] = {
     BEGIN(OBJ_LIST_SURFACE),
     OR_INT(oFlags, (OBJ_FLAG_ACTIVE_FROM_AFAR | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
     LOAD_COLLISION_DATA(ddd_seg7_collision_bowser_sub_door),
-    SET_FLOAT(oDrawingDistance, 20000),
+    SET_FLOAT(oDrawingDistance, 20000 * DRAW_DISTANCE_COEFF),
     SET_FLOAT(oCollisionDistance, 20000),
     BEGIN_LOOP(),
         CALL_NATIVE(bhv_bowsers_sub_loop),
@@ -2657,7 +2659,7 @@ const BehaviorScript bhvBowserSubDoor[] = {
 const BehaviorScript bhvBowsersSub[] = {
     BEGIN(OBJ_LIST_SURFACE),
     OR_INT(oFlags, (OBJ_FLAG_ACTIVE_FROM_AFAR | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
-    SET_FLOAT(oDrawingDistance, 20000),
+    SET_FLOAT(oDrawingDistance, 20000 * DRAW_DISTANCE_COEFF),
     SET_FLOAT(oCollisionDistance, 20000),
     LOAD_COLLISION_DATA(ddd_seg7_collision_submarine),
     BEGIN_LOOP(),
@@ -2744,7 +2746,7 @@ const BehaviorScript bhvSunkenShipPart2[] = {
     BEGIN(OBJ_LIST_DEFAULT),
     OR_INT(oFlags, (OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
     SCALE(/*Unused*/ 0, /*Field*/ 100),
-    SET_FLOAT(oDrawingDistance, 6000),
+    SET_FLOAT(oDrawingDistance, 6000 * DRAW_DISTANCE_COEFF),
     SET_HOME(),
     CALL(bhvSunkenShipSetRotation),
     BREAK(),
@@ -5659,7 +5661,7 @@ const BehaviorScript bhvUnagi[] = {
     ANIMATE(6),
     SET_HOME(),
     SCALE(/*Unused*/ 0, /*Field*/ 300),
-    SET_FLOAT(oDrawingDistance, 6000),
+    SET_FLOAT(oDrawingDistance, 6000 * DRAW_DISTANCE_COEFF),
     CALL_NATIVE(bhv_unagi_init),
     BEGIN_LOOP(),
         CALL_NATIVE(bhv_unagi_loop),
