@@ -16,8 +16,7 @@
 #include "spawn_object.h"
 #include "types.h"
 
-
-#define DRAW_DISTANCE_COEFF 0.1
+#include "../pc/configconst.h"
 
 /**
  * An unused linked list struct that seems to have been replaced by ObjectNode.

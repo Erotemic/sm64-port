@@ -15,7 +15,7 @@
 #include "game/object_list_processor.h"
 #include "surface_load.h"
 
-#define DRAW_DISTANCE_COEFF 0.1
+#include "../pc/configconst.h"
 
 s32 unused8038BE90;
 

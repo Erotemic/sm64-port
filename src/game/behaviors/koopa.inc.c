@@ -7,7 +7,7 @@
  * flag.
  */
 
-#define DRAW_DISTANCE_COEFF 0.1
+#include "../../pc/configconst.h"
 
 /**
  * Hitbox for koopa - this is used for every form except Koopa the Quick, which

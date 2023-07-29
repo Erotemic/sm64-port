@@ -55,8 +55,7 @@
 
 #include "make_const_nonconst.h"
 #include "behavior_data.h"
-
-#define DRAW_DISTANCE_COEFF 0.1
+#include "../src/pc/configconst.h"
 
 #define BC_B(a) _SHIFTL(a, 24, 8)
 #define BC_BB(a, b) (_SHIFTL(a, 24, 8) | _SHIFTL(b, 16, 8))

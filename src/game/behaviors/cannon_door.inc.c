@@ -1,6 +1,6 @@
 // cannon.c.inc
 //
-#define DRAW_DISTANCE_COEFF 0.1
+#include "../../pc/configconst.h"
 
 void bhv_cannon_closed_init(void) {
     struct Object *cannon;
