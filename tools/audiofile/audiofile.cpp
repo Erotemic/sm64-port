@@ -6140,6 +6140,7 @@ PCM *PCM::createDecompress(Track *track, File *fh, bool canSeek,
 
 void PCM::runPull()
 {
+	fprintf(stderr, "runPull\n");
 	AFframecount framesToRead = m_outChunk->frameCount;
 
 	/*
@@ -6167,7 +6168,7 @@ void PCM::runPull()
 	AFframecount framesRead = bytesRead >= 0 ? bytesRead / m_bytesPerFrame : 0;
 
 	m_track->nextfframe += framesRead;
-	fprintf(stderr, "About to assert\n");
+	fprintf(stderr, "\nAbout to assert\n");
 	assert(!canSeek() || (tell() == m_track->fpos_next_frame));
 
 	/*
