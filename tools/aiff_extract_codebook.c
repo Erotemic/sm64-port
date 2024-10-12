@@ -59,6 +59,7 @@ void fail_parse(const char *fmt, ...)
         fprintf(stderr, "%s: %s [%s]\n", progname, formatted, infilename);
         free(formatted);
     }
+    fprintf(stderr, "\n\nAbout to call exit(1)\n");
     exit(1);
 }
 
@@ -104,6 +105,7 @@ s32 readaifccodebook(FILE *fhandle, s32 ****table, s16 *order, s16 *npredictors)
             }
         }
     }
+    fprintf(stderr, "\n\nAbout to return readaifccodebook)\n");
     return 0;
 }
 
@@ -115,19 +117,24 @@ int main(int argc, char **argv)
     FILE *ifile;
     progname = argv[0];
 
-    fprintf(stderr, "Starting the aiff extract codebook program\n");
+    fprintf(stderr, "\n\nStarting the aiff extract codebook program\n\n");
 
     if (argc < 2) {
         fprintf(stderr, "%s %s\n", progname, usage);
+        fprintf(stderr, "\n\nAbout to call exit(1)\n");
         exit(1);
     }
 
     infilename = argv[1];
+    fprintf(stderr, "infilename: %s\n", infilename);
 
     if ((ifile = fopen(infilename, "rb")) == NULL) {
         fail_parse("AIFF file could not be opened");
+        fprintf(stderr, "\n\nAbout to call exit(1)\n");
         exit(1);
     }
+
+    fprintf(stderr, "\n\n[Check #1] Passed\n\n");
 
     char buf[5] = {0};
     checked_fread(buf, 4, 1, ifile);
@@ -138,6 +145,7 @@ int main(int argc, char **argv)
         fail_parse("not an AIFF file");
     }
 
+    fprintf(stderr, "\n\n[Check #2] Passed\n\n");
     for (;;) {
         s32 size;
         if (!fread(buf, 4, 1, ifile) || !fread(&size, 4, 1, ifile)) break;
@@ -168,10 +176,14 @@ int main(int argc, char **argv)
         fseek(ifile, nextOffset, SEEK_SET);
     }
     fclose(ifile);
+    fprintf(stderr, "\n\n[Check #3] Passed\n\n");
 
     if (coefTable == NULL) {
+        fprintf(stderr, "\n\n[Check #4] Calling into tools/tabledesign\n\n");
         execl("./tools/tabledesign", "tabledesign", "-s", "1", infilename, NULL);
+        fprintf(stderr, "\n\nThis should not happen?");
     } else {
+        fprintf(stderr, "\n\nStarting stdout Output\n\n");
         printf("%d\n%d\n", order, npredictors);
         for (s32 i = 0; i < npredictors; i++) {
             for (s32 j = 0; j < order; j++) {
@@ -182,5 +194,7 @@ int main(int argc, char **argv)
             }
         }
     }
+
+    fprintf(stderr, "\n\nAbout to Return\n");
     return 0;
 }
