@@ -73,6 +73,8 @@ int main(int argc, char **argv)
     programName = argv[0];
     thresh = 10.0;
 
+    fprintf(stderr, "[tabledesign.c] Enter tabledesign\n");
+
     if (argc < 2)
     {
         fprintf(stderr, "%s %s\n", argv[0], usage);
@@ -114,6 +116,7 @@ int main(int argc, char **argv)
         fprintf(stderr,
                 "%s: input AIFC file [%s] could not be opened.\n",
                 programName, argv[1]);
+        fprintf(stderr, "[tabledesign.c] exit(1) - AFopen Error\n");
         exit(1);
     }
 
@@ -258,5 +261,6 @@ int main(int argc, char **argv)
     {
         fprintf(stderr, "There was overflow - check the table\n");
     }
+    fprintf(stderr, "[tabledesign.c] Exit tabledesign\n");
     return 0;
 }
