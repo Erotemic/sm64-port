@@ -6167,6 +6167,7 @@ void PCM::runPull()
 	AFframecount framesRead = bytesRead >= 0 ? bytesRead / m_bytesPerFrame : 0;
 
 	m_track->nextfframe += framesRead;
+	fprintf(stderr, "About to assert\n");
 	assert(!canSeek() || (tell() == m_track->fpos_next_frame));
 
 	/*
