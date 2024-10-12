@@ -110,7 +110,13 @@ int main(int argc, char **argv)
 
     argv = &argv[optind - 1];
 
+    fprintf(stderr, "\n\nABOUT TO CALL AFopenfile\n\n");
+    fprintf(stderr, "\nargv[1] = %s", argv[1]);
+    fprintf(stderr, "\nMODE_READ = %s", MODE_READ);
+
     afFile = AFopenfile(argv[1], MODE_READ, NULL);
+
+    fprintf(stderr, "\n\nCALLED AFopenfile\n\n");
     if (afFile == NULL)
     {
         fprintf(stderr,
