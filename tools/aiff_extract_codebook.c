@@ -115,6 +115,8 @@ int main(int argc, char **argv)
     FILE *ifile;
     progname = argv[0];
 
+    fprintf(stderr, "Starting the aiff extract codebook program\n");
+
     if (argc < 2) {
         fprintf(stderr, "%s %s\n", progname, usage);
         exit(1);
