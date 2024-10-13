@@ -181,6 +181,8 @@ int main(int argc, char **argv)
     data = malloc(frameCount * sizeof(double*));
     dataSize = 0;
 
+    fprintf(stderr, "About to start afReadFrames AFreadframes loop\n");
+    int debug_numiters = 0;
     while (AFreadframes(afFile, AF_DEFAULT_TRACK, temp_s3 + frameSize, frameSize) == frameSize)
     {
         acvect(temp_s3 + frameSize, order, frameSize, vec);
@@ -212,7 +214,10 @@ int main(int argc, char **argv)
         {
             temp_s3[i] = temp_s3[i + frameSize];
         }
+        debug_numiters += 1;
     }
+    fprintf(stderr, "End loop part\n");
+    fprintf(stderr, "Num outer iterations %d\n", debug_numiters);
 
     vec[0] = 1.0;
     for (j = 1; j <= order; j++)

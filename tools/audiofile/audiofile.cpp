@@ -6140,7 +6140,7 @@ PCM *PCM::createDecompress(Track *track, File *fh, bool canSeek,
 
 void PCM::runPull()
 {
-	fprintf(stderr, "runPull\n");
+	//fprintf(stderr, "runPull\n");
 	AFframecount framesToRead = m_outChunk->frameCount;
 
 	/*
@@ -6168,7 +6168,7 @@ void PCM::runPull()
 	AFframecount framesRead = bytesRead >= 0 ? bytesRead / m_bytesPerFrame : 0;
 
 	m_track->nextfframe += framesRead;
-	fprintf(stderr, "\nAbout to assert\n");
+	//fprintf(stderr, "\nAbout to assert\n");
 	assert(!canSeek() || (tell() == m_track->fpos_next_frame));
 
 	/*
@@ -13113,6 +13113,7 @@ int afReadFrames (AFfilehandle file, int trackid, void *samples,
 	AFframecount	nvframesleft, nvframes2read;
 	int		bytes_per_vframe;
 	AFframecount	vframe;
+  //fprintf(stderr, "afReadFrames - enter\n");
 
 	if (!_af_filehandle_ok(file))
 		return -1;
@@ -13190,6 +13191,7 @@ int afReadFrames (AFfilehandle file, int trackid, void *samples,
 			premature EOF.
 		*/
 
+    fprintf(stderr, "afReadFrames - start loop\n");
 		while (track->filemodhappy && !eof && vframe < nvframes2read)
 		{
 			AFframecount	nvframes2pull;
