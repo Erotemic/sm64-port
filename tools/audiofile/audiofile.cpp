@@ -6147,9 +6147,6 @@ void PCM::runPull()
 {
 	//fprintf(stderr, "runPull\n");
 	AFframecount framesToRead = m_outChunk->frameCount;
-  if (WANT_TO_DEBUG){
-    fprintf(stderr, "debugging\n");
-  }
 
 	/*
 		WARNING: Due to the optimization explained at the end of
@@ -6186,30 +6183,30 @@ void PCM::runPull()
 
   if (WANT_TO_DEBUG){
     fprintf(stderr, "\n");
-    fprintf(stderr, "Hit a special frame\n");
-    fprintf(stderr, "m_track->fpos_next_frame: %ld \n", m_track->fpos_next_frame);
-    fprintf(stderr, "m_track->totalfframes: %ld \n", m_track->totalfframes);
-    fprintf(stderr, "m_track->frames2ignore: %ld \n", m_track->frames2ignore);
-    fprintf(stderr, "framesToRead: %ld \n", framesToRead);
-    fprintf(stderr, "m_bytesPerFrame: %d \n", m_bytesPerFrame);
-    fprintf(stderr, "bytesRead: %ld \n", bytesRead);
-    fprintf(stderr, "framesRead: %ld \n", framesRead);
+    fprintf(stderr, "[runPull] Hit a special frame\n");
+    fprintf(stderr, "[runPull] m_track->fpos_next_frame: %ld \n", m_track->fpos_next_frame);
+    fprintf(stderr, "[runPull] m_track->totalfframes: %ld \n", m_track->totalfframes);
+    fprintf(stderr, "[runPull] m_track->frames2ignore: %ld \n", m_track->frames2ignore);
+    fprintf(stderr, "[runPull] framesToRead: %ld \n", framesToRead);
+    fprintf(stderr, "[runPull] m_bytesPerFrame: %d \n", m_bytesPerFrame);
+    fprintf(stderr, "[runPull] bytesRead: %ld \n", bytesRead);
+    fprintf(stderr, "[runPull] framesRead: %ld \n", framesRead);
     fprintf(stderr, "\n");
   }
 
   if (m_track->fpos_next_frame == 52823){
       fprintf(stderr, "\n");
-      fprintf(stderr, "Hit frame where windows has an issue\n");
+      fprintf(stderr, "[runPull] Hit frame where windows has an issue\n");
       fprintf(stderr, "\n");
   }
 
   bool looks_ok = !canSeek() || (tell() == m_track->fpos_next_frame);
   if (! looks_ok){
     fprintf(stderr, "\n\n\n");
-    fprintf(stderr, "--- DEBUG INFO ---\n");
-    fprintf(stderr, "About to hit an assertion error:\n");
-    fprintf(stderr, "m_track->fpos_next_frame = %ld\n", m_track->fpos_next_frame);
-    fprintf(stderr, "-------------------\n");
+    fprintf(stderr, "[runPull] --- DEBUG INFO ---\n");
+    fprintf(stderr, "[runPull] About to hit an assertion error:\n");
+    fprintf(stderr, "[runPull] m_track->fpos_next_frame = %ld\n", m_track->fpos_next_frame);
+    fprintf(stderr, "[runPull] -------------------\n");
 
   }
 	assert(!canSeek() || (tell() == m_track->fpos_next_frame));
@@ -13156,7 +13153,10 @@ int afReadFrames (AFfilehandle file, int trackid, void *samples,
 	AFframecount	nvframesleft, nvframes2read;
 	int		bytes_per_vframe;
 	AFframecount	vframe;
-  //fprintf(stderr, "afReadFrames - enter\n");
+
+  if (WANT_TO_DEBUG){
+    fprintf(stderr, "\n[afReadFrames] ENTER\n");
+  }
 
 	if (!_af_filehandle_ok(file))
 		return -1;
@@ -13259,6 +13259,12 @@ int afReadFrames (AFfilehandle file, int trackid, void *samples,
 	}
 
 	track->nextvframe += vframe;
+
+  if (WANT_TO_DEBUG){
+    fprintf(stderr, "[afReadFrames] vframe %ld\n", vframe);
+    fprintf(stderr, "[afReadFrames] track->nextvframe %ld\n", track->nextvframe);
+    fprintf(stderr, "[afReadFrames] EXIT\n\n");
+  }
 
 	return vframe;
 }

@@ -10,7 +10,11 @@ echo "============================"
 echo "Attempting to make audiofile"
 echo "============================"
 cd ~/code/sm64-random-assets/tpl/sm64-port/tools/audiofile
-VERBOSE=1 make -j4
+
+NCPUS=$(nproc --all)
+echo "NCPUS = $NCPUS"
+
+VERBOSE=1 make -j"$NCPUS"
 
 #echo "Attempting to make tabledesign"
 #cd ~/code/sm64-random-assets/tpl/sm64-port/tools/sdk-tools/tabledesign
@@ -21,6 +25,6 @@ echo "============================"
 echo "Attempting to make aiff_extract_codebook"
 echo "============================"
 cd ~/code/sm64-random-assets/tpl/sm64-port/tools
-VERBOSE=1 make -j4
+VERBOSE=1 make -j"$NCPUS"
 
 echo "done with debug audio make"
