@@ -6168,6 +6168,23 @@ void PCM::runPull()
 	AFframecount framesRead = bytesRead >= 0 ? bytesRead / m_bytesPerFrame : 0;
 
 	m_track->nextfframe += framesRead;
+
+  if (m_track->fpos_next_frame >= 52700 && m_track->fpos_next_frame <= 52900){
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Hit a special frame %ld \n", m_track->fpos_next_frame);
+    fprintf(stderr, "framesToRead %ld \n", framesToRead);
+    fprintf(stderr, "bytesRead %ld \n", bytesRead);
+    fprintf(stderr, "framesRead %ld \n", framesRead);
+    fprintf(stderr, "m_track->totalfframes %ld \n", m_track->totalfframes);
+    fprintf(stderr, "\n");
+  }
+
+  if (m_track->fpos_next_frame == 52823){
+      fprintf(stderr, "\n");
+      fprintf(stderr, "Hit frame where windows has an issue\n");
+      fprintf(stderr, "\n");
+  }
+
   bool looks_ok = !canSeek() || (tell() == m_track->fpos_next_frame);
   if (! looks_ok){
     fprintf(stderr, "\n\n\n");
