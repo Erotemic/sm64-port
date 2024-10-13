@@ -6171,11 +6171,13 @@ void PCM::runPull()
 
   if (m_track->fpos_next_frame >= 52790 && m_track->fpos_next_frame <= 52900){
     fprintf(stderr, "\n");
-    fprintf(stderr, "Hit a special frame %ld \n", m_track->fpos_next_frame);
-    fprintf(stderr, "framesToRead %ld \n", framesToRead);
-    fprintf(stderr, "bytesRead %ld \n", bytesRead);
-    fprintf(stderr, "framesRead %ld \n", framesRead);
-    fprintf(stderr, "m_track->totalfframes %ld \n", m_track->totalfframes);
+    fprintf(stderr, "Hit a special frame\n");
+    fprintf(stderr, "m_track->fpos_next_frame: %ld \n", m_track->fpos_next_frame);
+    fprintf(stderr, "m_track->totalfframes: %ld \n", m_track->totalfframes);
+    fprintf(stderr, "m_track->frames2ignore: %ld \n", m_track->frames2ignore);
+    fprintf(stderr, "framesToRead: %ld \n", framesToRead);
+    fprintf(stderr, "bytesRead: %ld \n", bytesRead);
+    fprintf(stderr, "framesRead: %ld \n", framesRead);
     fprintf(stderr, "\n");
   }
 

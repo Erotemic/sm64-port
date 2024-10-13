@@ -105,7 +105,7 @@ s32 readaifccodebook(FILE *fhandle, s32 ****table, s16 *order, s16 *npredictors)
             }
         }
     }
-    fprintf(stderr, "\n\nAbout to return readaifccodebook)\n");
+    fprintf(stderr, "[tools/aiff-extract-codebook.c] About to return readaifccodebook)\n");
     return 0;
 }
 
@@ -179,10 +179,12 @@ int main(int argc, char **argv)
     fprintf(stderr, "[tools/aiff-extract-codebook.c] Check #3 Passed\n");
 
     if (coefTable == NULL) {
+        fprintf(stderr, "[tools/aiff-extract-codebook.c] coefTable is NULL\n");
         fprintf(stderr, "[tools/aiff-extract-codebook.c] calling into tools/tabledesign\n");
         execl("./tools/tabledesign", "tabledesign", "-s", "1", infilename, NULL);
         fprintf(stderr, "[tools/aiff-extract-codebook.c]This should not happen, tabledesign probably failed.");
     } else {
+        fprintf(stderr, "[tools/aiff-extract-codebook.c] coefTable is *not* NULL\n");
         fprintf(stderr, "[tools/aiff-extract-codebook.c] Starting stdout Output\n");
         printf("%d\n%d\n", order, npredictors);
         for (s32 i = 0; i < npredictors; i++) {
