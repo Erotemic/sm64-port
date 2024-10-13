@@ -6168,7 +6168,15 @@ void PCM::runPull()
 	AFframecount framesRead = bytesRead >= 0 ? bytesRead / m_bytesPerFrame : 0;
 
 	m_track->nextfframe += framesRead;
-	//fprintf(stderr, "\nAbout to assert\n");
+  bool looks_ok = !canSeek() || (tell() == m_track->fpos_next_frame);
+  if (! looks_ok){
+    fprintf(stderr, "\n\n\n");
+    fprintf(stderr, "--- DEBUG INFO ---\n");
+    fprintf(stderr, "About to hit an assertion error:\n");
+    fprintf(stderr, "m_track->fpos_next_frame = %ld\n", m_track->fpos_next_frame);
+    fprintf(stderr, "-------------------\n");
+
+  }
 	assert(!canSeek() || (tell() == m_track->fpos_next_frame));
 
 	/*
