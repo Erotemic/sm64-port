@@ -73,7 +73,7 @@ int main(int argc, char **argv)
     programName = argv[0];
     thresh = 10.0;
 
-    fprintf(stderr, "[tabledesign.c] Enter tabledesign\n");
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] Enter tabledesign.c\n");
 
     if (argc < 2)
     {
@@ -110,20 +110,20 @@ int main(int argc, char **argv)
 
     argv = &argv[optind - 1];
 
-    fprintf(stderr, "\n\n-------------\n");
-    fprintf(stderr, "ABOUT TO CALL AFopenfile\n\n");
+    fprintf(stderr, "\n--- [tools/sdk-tools/tabledesign.c] ---\n");
+    fprintf(stderr, "ABOUT TO CALL AFopenfile\n");
     fprintf(stderr, "argv[1] = %s\n", argv[1]);
     fprintf(stderr, "MODE_READ = %s\n", MODE_READ);
-    fprintf(stderr, "-------------\n");
+    fprintf(stderr, "----------------------------------------\n\n");
     afFile = AFopenfile(argv[1], MODE_READ, NULL);
 
-    fprintf(stderr, "\n\nCALLED AFopenfile\n\n");
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] CALLED AFopenfile\n");
     if (afFile == NULL)
     {
         fprintf(stderr,
                 "%s: input AIFC file [%s] could not be opened.\n",
                 programName, argv[1]);
-        fprintf(stderr, "[tabledesign.c] exit(1) - AFopen Error\n");
+        fprintf(stderr, "[tools/sdk-tools/tabledesign.c] exit(1) - AFopen Error\n");
         exit(1);
     }
 
@@ -181,8 +181,10 @@ int main(int argc, char **argv)
     data = malloc(frameCount * sizeof(double*));
     dataSize = 0;
 
-    fprintf(stderr, "About to start afReadFrames AFreadframes loop\n");
-    int debug_numiters = 0;
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] About to start afReadFrames AFreadframes loop\n");
+    int debug_num_iters_l0 = 0;
+    int debug_num_iters_l1 = 0;
+    int debug_num_iters_l2 = 0;
     while (AFreadframes(afFile, AF_DEFAULT_TRACK, temp_s3 + frameSize, frameSize) == frameSize)
     {
         acvect(temp_s3 + frameSize, order, frameSize, vec);
@@ -202,6 +204,7 @@ int main(int argc, char **argv)
                     {
                         if (spF4[i] >=  1.0) spF4[i] =  0.9999999999;
                         if (spF4[i] <= -1.0) spF4[i] = -0.9999999999;
+                        debug_num_iters_l1 += 1;
                     }
 
                     afromk(spF4, data[dataSize], order);
@@ -213,11 +216,16 @@ int main(int argc, char **argv)
         for (i = 0; i < frameSize; i++)
         {
             temp_s3[i] = temp_s3[i + frameSize];
+            debug_num_iters_l2 += 1;
         }
-        debug_numiters += 1;
+        debug_num_iters_l0 += 1;
+        fprintf(stderr, "\r[tools/sdk-tools/tabledesign.c] iteration: %d, %d, %d", debug_num_iters_l0, debug_num_iters_l1, debug_num_iters_l2);
     }
-    fprintf(stderr, "End loop part\n");
-    fprintf(stderr, "Num outer iterations %d\n", debug_numiters);
+    fprintf(stderr, "\n");
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] End loop part\n");
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] Num outer iterations %d\n", debug_num_iters_l0);
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] Num inner iterations1 %d\n", debug_num_iters_l1);
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] Num inner iterations2 %d\n", debug_num_iters_l2);
 
     vec[0] = 1.0;
     for (j = 1; j <= order; j++)
@@ -273,6 +281,6 @@ int main(int argc, char **argv)
     {
         fprintf(stderr, "There was overflow - check the table\n");
     }
-    fprintf(stderr, "[tabledesign.c] Exit tabledesign\n");
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] Exit tabledesign.c\n");
     return 0;
 }

@@ -134,7 +134,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    fprintf(stderr, "\n\n[Check #1] Passed\n\n");
+    fprintf(stderr, "[tools/aiff-extract-codebook.c] Check #1 Passed\n");
 
     char buf[5] = {0};
     checked_fread(buf, 4, 1, ifile);
@@ -145,7 +145,7 @@ int main(int argc, char **argv)
         fail_parse("not an AIFF file");
     }
 
-    fprintf(stderr, "\n\n[Check #2] Passed\n\n");
+    fprintf(stderr, "[tools/aiff-extract-codebook.c] Check #2 Passed\n");
     for (;;) {
         s32 size;
         if (!fread(buf, 4, 1, ifile) || !fread(&size, 4, 1, ifile)) break;
@@ -176,14 +176,14 @@ int main(int argc, char **argv)
         fseek(ifile, nextOffset, SEEK_SET);
     }
     fclose(ifile);
-    fprintf(stderr, "\n\n[Check #3] Passed\n\n");
+    fprintf(stderr, "[tools/aiff-extract-codebook.c] Check #3 Passed\n");
 
     if (coefTable == NULL) {
-        fprintf(stderr, "\n\n[Check #4] Calling into tools/tabledesign\n\n");
+        fprintf(stderr, "[tools/aiff-extract-codebook.c] calling into tools/tabledesign\n");
         execl("./tools/tabledesign", "tabledesign", "-s", "1", infilename, NULL);
-        fprintf(stderr, "\n\nThis should not happen, tabledesign probably failed.");
+        fprintf(stderr, "[tools/aiff-extract-codebook.c]This should not happen, tabledesign probably failed.");
     } else {
-        fprintf(stderr, "\n\nStarting stdout Output\n\n");
+        fprintf(stderr, "[tools/aiff-extract-codebook.c] Starting stdout Output\n");
         printf("%d\n%d\n", order, npredictors);
         for (s32 i = 0; i < npredictors; i++) {
             for (s32 j = 0; j < order; j++) {
@@ -195,6 +195,6 @@ int main(int argc, char **argv)
         }
     }
 
-    fprintf(stderr, "\n\nAbout to Return\n");
+    fprintf(stderr, "[tools/aiff-extract-codebook.c] About to return 0;\n");
     return 0;
 }
