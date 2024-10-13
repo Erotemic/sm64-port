@@ -13191,7 +13191,7 @@ int afReadFrames (AFfilehandle file, int trackid, void *samples,
 			premature EOF.
 		*/
 
-    fprintf(stderr, "afReadFrames - start loop\n");
+    //fprintf(stderr, "afReadFrames - start loop\n");
 		while (track->filemodhappy && !eof && vframe < nvframes2read)
 		{
 			AFframecount	nvframes2pull;
