@@ -181,7 +181,7 @@ int main(int argc, char **argv)
     if (coefTable == NULL) {
         fprintf(stderr, "\n\n[Check #4] Calling into tools/tabledesign\n\n");
         execl("./tools/tabledesign", "tabledesign", "-s", "1", infilename, NULL);
-        fprintf(stderr, "\n\nThis should not happen?");
+        fprintf(stderr, "\n\nThis should not happen, tabledesign probably failed.");
     } else {
         fprintf(stderr, "\n\nStarting stdout Output\n\n");
         printf("%d\n%d\n", order, npredictors);
