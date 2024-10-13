@@ -739,6 +739,8 @@ const CompressionUnit *_af_compression_unit_from_id (int compressionid);
 #ifndef AUPVINTERNAL_H
 #define AUPVINTERNAL_H
 
+bool WANT_TO_DEBUG = true;
+
 struct _AUpvitem
 {
 	int	valid;
@@ -4538,6 +4540,9 @@ FileModule::FileModule(Mode mode, Track *track, File *fh, bool canSeek) :
 
 ssize_t FileModule::read(void *data, size_t nbytes)
 {
+  if (WANT_TO_DEBUG){
+    fprintf(stderr, "call FileModule::read: %ld\n", nbytes);
+  }
 	ssize_t bytesRead = m_fh->read(data, nbytes);
 	if (bytesRead > 0)
 	{
@@ -6142,6 +6147,9 @@ void PCM::runPull()
 {
 	//fprintf(stderr, "runPull\n");
 	AFframecount framesToRead = m_outChunk->frameCount;
+  if (WANT_TO_DEBUG){
+    fprintf(stderr, "debugging\n");
+  }
 
 	/*
 		WARNING: Due to the optimization explained at the end of
@@ -6170,12 +6178,20 @@ void PCM::runPull()
 	m_track->nextfframe += framesRead;
 
   if (m_track->fpos_next_frame >= 52790 && m_track->fpos_next_frame <= 52900){
+    WANT_TO_DEBUG = true;
+  }
+  else {
+    WANT_TO_DEBUG = false;
+  }
+
+  if (WANT_TO_DEBUG){
     fprintf(stderr, "\n");
     fprintf(stderr, "Hit a special frame\n");
     fprintf(stderr, "m_track->fpos_next_frame: %ld \n", m_track->fpos_next_frame);
     fprintf(stderr, "m_track->totalfframes: %ld \n", m_track->totalfframes);
     fprintf(stderr, "m_track->frames2ignore: %ld \n", m_track->frames2ignore);
     fprintf(stderr, "framesToRead: %ld \n", framesToRead);
+    fprintf(stderr, "m_bytesPerFrame: %d \n", m_bytesPerFrame);
     fprintf(stderr, "bytesRead: %ld \n", bytesRead);
     fprintf(stderr, "framesRead: %ld \n", framesRead);
     fprintf(stderr, "\n");
