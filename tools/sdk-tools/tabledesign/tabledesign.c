@@ -117,7 +117,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "----------------------------------------\n\n");
     afFile = AFopenfile(argv[1], MODE_READ, NULL);
 
-    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] CALLED AFopenfile\n");
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] CALLED AFopenfile (i.e. afOpenFile)\n");
     if (afFile == NULL)
     {
         fprintf(stderr,
@@ -219,10 +219,11 @@ int main(int argc, char **argv)
             debug_num_iters_l2 += 1;
         }
         debug_num_iters_l0 += 1;
-        fprintf(stderr, "\r[tools/sdk-tools/tabledesign.c] iteration: %d, %d, %d", debug_num_iters_l0, debug_num_iters_l1, debug_num_iters_l2);
+        fprintf(stderr, "\r[tools/sdk-tools/tabledesign.c] status: %d, %d, %d, %d", dataSize, debug_num_iters_l0, debug_num_iters_l1, debug_num_iters_l2);
     }
     fprintf(stderr, "\n");
     fprintf(stderr, "[tools/sdk-tools/tabledesign.c] End loop part\n");
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] dataSize: %d\n", dataSize);
     fprintf(stderr, "[tools/sdk-tools/tabledesign.c] Num outer iterations %d\n", debug_num_iters_l0);
     fprintf(stderr, "[tools/sdk-tools/tabledesign.c] Num inner iterations1 %d\n", debug_num_iters_l1);
     fprintf(stderr, "[tools/sdk-tools/tabledesign.c] Num inner iterations2 %d\n", debug_num_iters_l2);
