@@ -181,6 +181,11 @@ int main(int argc, char **argv)
     data = malloc(frameCount * sizeof(double*));
     dataSize = 0;
 
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] opt = %d\n", opt);
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] rate = %d\n", rate);
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] channels = %d\n", channels);
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] tracks = %d\n", tracks);
+    fprintf(stderr, "[tools/sdk-tools/tabledesign.c] frameCount = %d\n", frameCount);
     fprintf(stderr, "[tools/sdk-tools/tabledesign.c] About to start afReadFrames AFreadframes loop\n");
     int debug_num_iters_l0 = 0;
     int debug_num_iters_l1 = 0;
