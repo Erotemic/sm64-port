@@ -4559,6 +4559,17 @@ ssize_t FileModule::read(void *data, size_t nbytes)
   }
 	if (bytesRead > 0)
 	{
+    if (WANT_TO_DEBUG){
+      // Inspect the bytes read
+      if (bytesRead > 0 && data != NULL) {
+            fprintf(stderr, "[FileModule::read] Bytes read: ");
+            unsigned char *byteData = static_cast<unsigned char*>(data);
+            for (ssize_t i = 0; i < bytesRead; ++i) {
+                fprintf(stderr, "%02x ", byteData[i]);
+            }
+            fprintf(stderr, "\n");
+      }
+    }
 		m_track->fpos_next_frame += bytesRead;
     if (WANT_TO_DEBUG){
       fprintf(stderr, "[FileModule::read] m_track->fpos_next_frame=%ld\n", m_track->fpos_next_frame);
