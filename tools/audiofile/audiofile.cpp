@@ -4541,7 +4541,7 @@ FileModule::FileModule(Mode mode, Track *track, File *fh, bool canSeek) :
 ssize_t FileModule::read(void *data, size_t nbytes)
 {
   if (WANT_TO_DEBUG){
-    fprintf(stderr, "call FileModule::read: %ld\n", nbytes);
+    fprintf(stderr, "[FileModule::read] ENTER, nbytes=%ld\n", nbytes);
   }
 	ssize_t bytesRead = m_fh->read(data, nbytes);
 	if (bytesRead > 0)
@@ -6174,7 +6174,7 @@ void PCM::runPull()
 
 	m_track->nextfframe += framesRead;
 
-  if (m_track->fpos_next_frame >= 52790 && m_track->fpos_next_frame <= 52900){
+  if (m_track->fpos_next_frame >= 52790 && m_track->fpos_next_frame <= 52886){
     WANT_TO_DEBUG = true;
   }
   else {

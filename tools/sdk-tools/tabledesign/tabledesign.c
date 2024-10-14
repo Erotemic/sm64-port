@@ -225,7 +225,9 @@ int main(int argc, char **argv)
             debug_num_iters_l2 += 1;
         }
         debug_num_iters_l0 += 1;
-        fprintf(stderr, "\r[tools/sdk-tools/tabledesign.c] status: %d, %d, %d, %d", dataSize, debug_num_iters_l0, debug_num_iters_l1, debug_num_iters_l2);
+        if (dataSize > 60) {
+            fprintf(stderr, "\r[tools/sdk-tools/tabledesign.c] status: %d, %d, %d, %d", dataSize, debug_num_iters_l0, debug_num_iters_l1, debug_num_iters_l2);
+        }
     }
     fprintf(stderr, "\n");
     fprintf(stderr, "[tools/sdk-tools/tabledesign.c] End loop part\n");
