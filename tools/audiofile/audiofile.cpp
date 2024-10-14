@@ -4550,9 +4550,13 @@ FileModule::FileModule(Mode mode, Track *track, File *fh, bool canSeek) :
 ssize_t FileModule::read(void *data, size_t nbytes)
 {
   if (WANT_TO_DEBUG){
-    fprintf(stderr, "[FileModule::read] ENTER, nbytes=%ld\n", nbytes);
+    fprintf(stderr, "[FileModule::read] ENTER\n");
   }
 	ssize_t bytesRead = m_fh->read(data, nbytes);
+  if (WANT_TO_DEBUG){
+    fprintf(stderr, "[FileModule::read] nbytes=%ld\n", nbytes);
+    fprintf(stderr, "[FileModule::read] bytesRead=%ld\n", bytesRead);
+  }
 	if (bytesRead > 0)
 	{
 		m_track->fpos_next_frame += bytesRead;
