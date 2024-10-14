@@ -4458,6 +4458,9 @@ void BlockCodec::reset2()
 {
 	m_track->fpos_next_frame = m_track->fpos_first_frame +
 		m_bytesPerPacket * (m_track->nextfframe / m_framesPerPacket);
+  if (WANT_TO_DEBUG){
+    fprintf(stderr, "[BlockCodec::reset2] m_track->fpos_next_frame=%ld\n", m_track->fpos_next_frame);
+  }
 	m_track->frames2ignore += m_framesToIgnore;
 
 	assert(m_track->nextfframe % m_framesPerPacket == 0);
@@ -4499,6 +4502,9 @@ void BlockCodec::sync2()
 	assert(tell() == m_track->fpos_next_frame);
 	m_track->fpos_after_data = tell();
 	m_track->fpos_next_frame = m_savedPositionNextFrame;
+  if (WANT_TO_DEBUG){
+    fprintf(stderr, "[BlockCodec::sync2] m_track->fpos_next_frame=%ld\n", m_track->fpos_next_frame);
+  }
 	m_track->nextfframe = m_savedNextFrame;
 }
 
@@ -4535,6 +4541,9 @@ FileModule::FileModule(Mode mode, Track *track, File *fh, bool canSeek) :
 	m_canSeek(canSeek)
 {
 	track->fpos_next_frame = track->fpos_first_frame;
+  if (WANT_TO_DEBUG){
+    fprintf(stderr, "[::FileModule] m_track->fpos_next_frame=%ld\n", m_track->fpos_next_frame);
+  }
 	track->frames2ignore = 0;
 }
 
@@ -4547,6 +4556,9 @@ ssize_t FileModule::read(void *data, size_t nbytes)
 	if (bytesRead > 0)
 	{
 		m_track->fpos_next_frame += bytesRead;
+    if (WANT_TO_DEBUG){
+      fprintf(stderr, "[FileModule::read] m_track->fpos_next_frame=%ld\n", m_track->fpos_next_frame);
+    }
 	}
 	return bytesRead;
 }
@@ -4557,6 +4569,9 @@ ssize_t FileModule::write(const void *data, size_t nbytes)
 	if (bytesWritten > 0)
 	{
 		m_track->fpos_next_frame += bytesWritten;
+    if (WANT_TO_DEBUG){
+      fprintf(stderr, "[FileModule::write] m_track->fpos_next_frame=%ld\n", m_track->fpos_next_frame);
+    }
 		m_track->data_size += bytesWritten;
 	}
 	return bytesWritten;
@@ -4831,6 +4846,9 @@ void G711::sync2()
 	m_track->fpos_after_data = tell();
 
 	m_track->fpos_next_frame = m_savedPositionNextFrame;
+  if (WANT_TO_DEBUG){
+    fprintf(stderr, "[G711::sync2] m_track->fpos_next_frame=%ld\n", m_track->fpos_next_frame);
+  }
 	m_track->nextfframe = m_savedNextFrame;
 }
 
@@ -4894,6 +4912,9 @@ void G711::reset2()
 
 	m_track->fpos_next_frame = m_track->fpos_first_frame +
 		framesize * m_track->nextfframe;
+  if (WANT_TO_DEBUG){
+    fprintf(stderr, "[G711::reset2] m_track->fpos_next_frame=%ld\n", m_track->fpos_next_frame);
+  }
 
 	m_track->frames2ignore = 0;
 }
@@ -6134,6 +6155,9 @@ void PCM::sync2()
 	m_track->fpos_after_data = tell();
 
 	m_track->fpos_next_frame = m_saved_fpos_next_frame;
+  if (WANT_TO_DEBUG){
+    fprintf(stderr, "[PCM::sync2] m_track->fpos_next_frame=%ld\n", m_track->fpos_next_frame);
+  }
 	m_track->nextfframe = m_saved_nextfframe;
 }
 
@@ -6227,6 +6251,9 @@ void PCM::reset2()
 {
 	m_track->fpos_next_frame = m_track->fpos_first_frame +
 		m_bytesPerFrame * m_track->nextfframe;
+  if (WANT_TO_DEBUG){
+    fprintf(stderr, "[PCM::sync2] m_track->fpos_next_frame=%ld\n", m_track->fpos_next_frame);
+  }
 
 	m_track->frames2ignore = 0;
 }
